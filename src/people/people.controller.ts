@@ -27,4 +27,8 @@ export class PeopleController {
     async listarPacientes() {
         return this.peopleService.listarPacientes();
     }
+
+    async reservarCita() {
+        return {msg: "Reservando cita..."}
+    }
 }
