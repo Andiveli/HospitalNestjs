@@ -93,7 +93,8 @@ export class AuthService {
         throw new HttpException('El usuario no existe', HttpStatus.NOT_FOUND);
     }
 
-    async generarJWT(id: number): Promise<string> {
-        return this.jwtService.sign({id});
+    async generarJWT(id: number, nombre: string): Promise<string> {
+        const payload = { username: nombre, sub: id};
+        return this.jwtService.signAsync(payload);
     }
 }

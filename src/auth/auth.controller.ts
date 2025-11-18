@@ -2,7 +2,6 @@ import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Post
 import { AuthService } from './auth.service';
 import { SingupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
-import { randomBytes } from 'crypto';
 
 @Controller('auth')
 export class AuthController {
@@ -40,7 +39,7 @@ export class AuthController {
                 apellido: usuario.apellido,
                 email: usuario.email,
                 admin: usuario.rol === 'admin' ? true : false,
-                token: await this.authService.generarJWT(usuario.id)
+                token: await this.authService.generarJWT(usuario.id, usuario.nombre)
             });
         } else {
             const error = new Error('Contraseña incorrecta');
@@ -73,6 +72,4 @@ export class AuthController {
         await this.authService.guardar(usuario);
         return ({msg: 'Contraseña reestablecida correctamente'});
     }
-    
-    
 }
