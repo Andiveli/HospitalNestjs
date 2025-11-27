@@ -1,34 +1,45 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Post,
+    UseGuards,
+} from '@nestjs/common';
 import { PeopleService } from './people.service';
 import { CrearDto } from './dto/crear.dto';
+import { PeopleGuard } from './people.guard';
 
 @Controller('people')
 export class PeopleController {
-    constructor(
-        private readonly peopleService: PeopleService
-    ) {}
+    constructor(private readonly peopleService: PeopleService) {}
 
-    @Post('/medico')
+    @UseGuards(PeopleGuard)
+    @Post('medico')
+    @HttpCode(HttpStatus.CREATED)
     async crearMedico(@Body() medico: CrearDto) {
         return this.peopleService.crearMedico(medico);
     }
 
-    @Post('/paciente')
+    @UseGuards(PeopleGuard)
+    @Post('paciente')
+    @HttpCode(HttpStatus.CREATED)
     async crearPaciente(@Body() paciente: CrearDto) {
         return this.peopleService.crearPaciente(paciente);
     }
 
-    @Get('/medicos')
+    @UseGuards(PeopleGuard)
+    @Get('medicos')
+    @HttpCode(HttpStatus.ACCEPTED)
     async listarMedicos() {
         return this.peopleService.listarMedicos();
     }
 
-    @Get('/pacientes')
+    @UseGuards(PeopleGuard)
+    @Get('pacientes')
+    @HttpCode(HttpStatus.ACCEPTED)
     async listarPacientes() {
         return this.peopleService.listarPacientes();
-    }
-
-    async reservarCita() {
-        return {msg: "Reservando cita..."}
     }
 }

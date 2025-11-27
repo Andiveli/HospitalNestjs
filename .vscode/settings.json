@@ -1,7 +1,5 @@
 {
     "workbench.settings.useSplitJSON": false,
-    "json.schemas": [
-        
-
-    ]
+    "json.schemas": []
 }
+

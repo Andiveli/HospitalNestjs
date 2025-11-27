@@ -8,8 +8,7 @@ import * as hbs from 'handlebars';
 @Injectable()
 export class EmailService implements OnModuleInit {
     private transporter;
-    constructor( private readonly configService: ConfigService ) {
-    }
+    constructor(private readonly configService: ConfigService) {}
 
     onModuleInit() {
         this.transporter = nodemailer.createTransport({
@@ -24,22 +23,30 @@ export class EmailService implements OnModuleInit {
     }
 
     async enviarEmail(to: string, nombre: string, token: string) {
-        const html = this.renderTemplate(nombre, `${this.configService.get('FRONTEND_URL')}/auth/confirmar/${token}`, 'confirmacion.html');
+        const html = this.renderTemplate(
+            nombre,
+            `${this.configService.get('FRONTEND_URL')}/auth/confirmar/${token}`,
+            'confirmacion.html',
+        );
         await this.transporter.sendMail({
             from: `"No Reply" <${this.configService.get('EMAIL_USER')}>`,
             to,
             subject: 'Confirma tu cuenta',
-            html
+            html,
         });
     }
 
     async recuperarEmail(to: string, nombre: string, token: string) {
-        const html = this.renderTemplate(nombre, `${this.configService.get('FRONTEND_URL')}/auth/recuperar-password/${token}`, 'recuperar.html');
+        const html = this.renderTemplate(
+            nombre,
+            `${this.configService.get('FRONTEND_URL')}/auth/recuperar-password/${token}`,
+            'recuperar.html',
+        );
         await this.transporter.sendMail({
             from: `"No Reply" <${this.configService.get('EMAIL_USER')}>`,
             to,
             subject: 'Recupera tu contraseña',
-            html
+            html,
         });
     }
 

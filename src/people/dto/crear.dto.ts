@@ -1,12 +1,12 @@
-import { IsEmail, IsNotEmpty, IsString } from "class-validator";
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class CrearDto {
     @IsString()
-    @IsNotEmpty({message: 'El email es requerido'})
-    @IsEmail({}, {message: 'El email no es valido'})
+    @IsNotEmpty({ message: 'El email es requerido' })
+    @IsEmail({}, { message: 'El email no es valido' })
     email: string;
 
     @IsString()
-    @IsNotEmpty({message: 'El rol es requerido'})
+    @IsNotEmpty({ message: 'El rol es requerido' })
     rol: string;
 }

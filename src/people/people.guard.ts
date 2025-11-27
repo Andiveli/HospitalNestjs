@@ -3,15 +3,17 @@ import { Observable } from 'rxjs';
 
 @Injectable()
 export class PeopleGuard implements CanActivate {
-  constructor(private requiredRole: string) {}
+    constructor() {}
 
-  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
+    canActivate(
+        context: ExecutionContext,
+    ): boolean | Promise<boolean> | Observable<boolean> {
+        const request = context.switchToHttp().getRequest();
+        const user = request.user;
 
-    if(!user || user.rol !== this.requiredRole) {
-      throw new Error('No tienes permiso para acceder a esta ruta');
+        if (!user || user.rol !== 'admin') {
+            throw new Error('No tienes permiso para acceder a esta ruta');
+        }
+        return true;
     }
-    return true;
-  }
 }
