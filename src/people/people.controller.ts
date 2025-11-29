@@ -15,28 +15,28 @@ import { PeopleGuard } from './people.guard';
 export class PeopleController {
     constructor(private readonly peopleService: PeopleService) {}
 
-    @UseGuards(PeopleGuard)
+    @UseGuards(PeopleGuard('local'))
     @Post('medico')
     @HttpCode(HttpStatus.CREATED)
     async crearMedico(@Body() medico: CrearDto) {
         return this.peopleService.crearMedico(medico);
     }
 
-    @UseGuards(PeopleGuard)
+    @UseGuards(PeopleGuard('local'))
     @Post('paciente')
     @HttpCode(HttpStatus.CREATED)
     async crearPaciente(@Body() paciente: CrearDto) {
         return this.peopleService.crearPaciente(paciente);
     }
 
-    @UseGuards(PeopleGuard)
+    @UseGuards(PeopleGuard('local'))
     @Get('medicos')
     @HttpCode(HttpStatus.ACCEPTED)
     async listarMedicos() {
         return this.peopleService.listarMedicos();
     }
 
-    @UseGuards(PeopleGuard)
+    @UseGuards(PeopleGuard('local'))
     @Get('pacientes')
     @HttpCode(HttpStatus.ACCEPTED)
     async listarPacientes() {

@@ -49,15 +49,7 @@ export class AuthController {
         const usuario = await this.authService.usuarioConfirmado(email);
         if (await this.authService.comprobarPass(email, password)) {
             return {
-                id: usuario.id,
-                nombre: usuario.nombre,
-                apellido: usuario.apellido,
-                email: usuario.email,
-                admin: usuario.rol === 'admin' ? true : false,
-                token: await this.authService.generarJWT(
-                    usuario.id,
-                    usuario.nombre,
-                ),
+                token: await this.authService.generarJWT(usuario.id),
             };
         } else {
             const error = new Error('Contraseña incorrecta');

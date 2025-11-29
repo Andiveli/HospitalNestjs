@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+    CanActivate,
+    ExecutionContext,
+    ForbiddenException,
+    Injectable,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 
 @Injectable()
@@ -12,7 +17,10 @@ export class PeopleGuard implements CanActivate {
         const user = request.user;
 
         if (!user || user.rol !== 'admin') {
-            throw new Error('No tienes permiso para acceder a esta ruta');
+            console.log(user);
+            throw new ForbiddenException(
+                'Access denied: Solo los administradores pueden realizar esta acción.',
+            );
         }
         return true;
     }
