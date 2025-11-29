@@ -5,12 +5,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PeopleEntity } from 'src/people/people.entity';
 import { EmailModule } from 'src/email/email.module';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { AuthGuard } from './auth.guard';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { JwtStrategy } from './jwt.strategy';
+import { PassportModule } from '@nestjs/passport';
+import { LocalStrategy } from './local.strategy';
+import { JwtAuthGuard } from './jwt.guard';
 
 @Module({
     imports: [
+        ConfigModule.forRoot(),
         EmailModule,
         TypeOrmModule.forFeature([PeopleEntity]),
         JwtModule.registerAsync({
@@ -19,18 +23,21 @@ import { APP_GUARD } from '@nestjs/core';
                 global: true,
                 secret: configService.get<string>('JWT_SECRET'),
                 signOptions: {
-                    expiresIn: '1h',
+                    expiresIn: '24h',
                 },
             }),
         }),
+        PassportModule,
     ],
     controllers: [AuthController],
     providers: [
         AuthService,
         {
             provide: APP_GUARD,
-            useClass: AuthGuard,
+            useClass: JwtAuthGuard,
         },
+        LocalStrategy,
+        JwtStrategy,
     ],
 })
 export class AuthModule {}

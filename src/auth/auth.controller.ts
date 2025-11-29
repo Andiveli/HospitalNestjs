@@ -3,20 +3,31 @@ import {
     Controller,
     Get,
     HttpCode,
-    HttpException,
     HttpStatus,
     Param,
     Post,
+    Request,
+    UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SingupDto } from './dto/signup.dto';
-import { LoginDto } from './dto/login.dto';
-import { Public } from './auth.public.decorator';
+import { LocalAuthGuard } from './local.guard';
+import { Public } from './public.decorator';
+import UserRequest from 'src/people/people.request';
 
+/**
+ * Controlador de autenticación
+ * Maneja el registro, login, confirmación de usuarios y recuperación de contraseña
+ */
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
+    /**
+     * Registra un nuevo usuario en el sistema
+     * @param body - Datos del usuario a registrar
+     * @returns Mensaje de confirmación del registro
+     */
     @Public()
     @Post()
     @HttpCode(HttpStatus.CREATED)
@@ -28,6 +39,11 @@ export class AuthController {
         return { msg: 'Usuario registrado correctamente' };
     }
 
+    /**
+     * Confirma un usuario mediante token enviado por email
+     * @param token - Token de confirmación
+     * @returns Mensaje de confirmación exitosa
+     */
     @Public()
     @Get('confirmar/:token')
     @HttpCode(HttpStatus.OK)
@@ -41,30 +57,24 @@ export class AuthController {
         return { msg: 'Usuario confirmado correctamente' };
     }
 
+    /**
+     * Inicia sesión de usuario y genera token JWT
+     * @param req - Objeto de solicitud con datos del usuario autenticado
+     * @returns Token JWT para autenticación
+     */
     @Public()
+    @UseGuards(LocalAuthGuard)
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    async auth(@Body() body: LoginDto) {
-        const { email, password } = body;
-        const usuario = await this.authService.usuarioConfirmado(email);
-        if (await this.authService.comprobarPass(email, password)) {
-            return {
-                id: usuario.id,
-                nombre: usuario.nombre,
-                apellido: usuario.apellido,
-                email: usuario.email,
-                admin: usuario.rol === 'admin' ? true : false,
-                token: await this.authService.generarJWT(
-                    usuario.id,
-                    usuario.nombre,
-                ),
-            };
-        } else {
-            const error = new Error('Contraseña incorrecta');
-            throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
-        }
+    async auth(@Request() req: UserRequest) {
+        return { token: await this.authService.generarJWT(req.user.email) };
     }
 
+    /**
+     * Envía email con instrucciones para recuperar contraseña
+     * @param email - Email del usuario que solicita recuperación
+     * @returns Mensaje de confirmación de envío de email
+     */
     @Public()
     @Post('olvide-password')
     @HttpCode(HttpStatus.OK)
@@ -78,6 +88,11 @@ export class AuthController {
         };
     }
 
+    /**
+     * Verifica token de recuperación de contraseña
+     * @param token - Token de recuperación
+     * @returns Mensaje para proceder con nueva contraseña
+     */
     @Public()
     @Get('recuperar-password/:token')
     @HttpCode(HttpStatus.OK)
@@ -88,6 +103,13 @@ export class AuthController {
         return { msg: 'Coloca tu nueva contraseña' };
     }
 
+    /**
+     * Restablece contraseña del usuario con token válido
+     * @param token - Token de recuperación
+     * @param password - Nueva contraseña
+     * @param confirmPassword - Confirmación de nueva contraseña
+     * @returns Mensaje de restablecimiento exitoso
+     */
     @Public()
     @Post('recuperar-password/:token')
     @HttpCode(HttpStatus.OK)
