@@ -98,12 +98,12 @@ export class AuthService {
         throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
     }
 
-    async comprobarPass(email: string, password: string): Promise<boolean> {
+    async validarUser(email: string, password: string) {
         const usuario = await this.authRepository.findOne({ where: { email } });
         if (usuario) {
             const passValida = await compare(password, usuario.password);
             if (passValida) {
-                return true;
+                return usuario;
             }
             throw new HttpException(
                 'Contraseña incorrecta',
@@ -121,8 +121,9 @@ export class AuthService {
         throw new HttpException('El usuario no existe', HttpStatus.NOT_FOUND);
     }
 
-    async generarJWT(id: number): Promise<string> {
-        const payload = { id };
+    async generarJWT(email: string): Promise<string> {
+        const user = await this.authRepository.findOne({ where: { email } });
+        const payload = { sub: user?.id, email: user?.email, rol: user?.rol };
         return this.jwtService.signAsync(payload);
     }
 }

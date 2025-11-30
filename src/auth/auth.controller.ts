@@ -3,15 +3,17 @@ import {
     Controller,
     Get,
     HttpCode,
-    HttpException,
     HttpStatus,
     Param,
     Post,
+    Request,
+    UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SingupDto } from './dto/signup.dto';
-import { LoginDto } from './dto/login.dto';
-import { Public } from './auth.public.decorator';
+import { LocalAuthGuard } from './local.guard';
+import { Public } from './public.decorator';
+import UserRequest from 'src/people/people.request';
 
 @Controller('auth')
 export class AuthController {
@@ -42,19 +44,11 @@ export class AuthController {
     }
 
     @Public()
+    @UseGuards(LocalAuthGuard)
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    async auth(@Body() body: LoginDto) {
-        const { email, password } = body;
-        const usuario = await this.authService.usuarioConfirmado(email);
-        if (await this.authService.comprobarPass(email, password)) {
-            return {
-                token: await this.authService.generarJWT(usuario.id),
-            };
-        } else {
-            const error = new Error('Contraseña incorrecta');
-            throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
-        }
+    async auth(@Request() req: UserRequest) {
+        return { token: await this.authService.generarJWT(req.user.email) };
     }
 
     @Public()
