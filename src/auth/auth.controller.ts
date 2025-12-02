@@ -14,6 +14,7 @@ import { SingupDto } from './dto/signup.dto';
 import { LocalAuthGuard } from './local.guard';
 import { Public } from './public.decorator';
 import UserRequest from 'src/people/people.request';
+import { CambiarPassDto } from './dto/cambiarPass.dto';
 
 /**
  * Controlador de autenticación
@@ -32,10 +33,12 @@ export class AuthController {
     @Post()
     @HttpCode(HttpStatus.CREATED)
     async signUp(@Body() body: SingupDto): Promise<{ msg: string }> {
-        const { nombre, apellido, email, password, confirmPassword } = body;
-        await this.authService.noExisteEmail(email);
-        await this.authService.compararPassword(password, confirmPassword);
-        await this.authService.guardar({ nombre, apellido, email, password });
+        await this.authService.noExisteEmail(body.email);
+        this.authService.compararPassword(
+            body.passwordHash,
+            body.confirmPassword,
+        );
+        await this.authService.guardar(body);
         return { msg: 'Usuario registrado correctamente' };
     }
 
@@ -51,8 +54,8 @@ export class AuthController {
         @Param('token') token: string,
     ): Promise<{ msg: string }> {
         const usuarioConfirmar = await this.authService.confirmarUsuario(token);
-        usuarioConfirmar.token = null;
-        usuarioConfirmar.confirmado = true;
+        usuarioConfirmar.token = '';
+        usuarioConfirmar.verificado = true;
         await this.authService.guardar(usuarioConfirmar);
         return { msg: 'Usuario confirmado correctamente' };
     }
@@ -119,10 +122,27 @@ export class AuthController {
         @Body('confirmPassword') confirmPassword: string,
     ): Promise<{ msg: string }> {
         const usuario = await this.authService.confirmarUsuario(token);
-        await this.authService.compararPassword(password, confirmPassword);
-        usuario.password = await this.authService.hashPass(password);
-        usuario.token = null;
+        this.authService.compararPassword(password, confirmPassword);
+        usuario.passwordHash = await this.authService.hashPass(password);
+        usuario.token = '';
         await this.authService.guardar(usuario);
         return { msg: 'Contraseña reestablecida correctamente' };
+    }
+
+    @Post('cambiarPass')
+    @HttpCode(HttpStatus.OK)
+    async cambiarPass(
+        @Request() req: UserRequest,
+        @Body() body: CambiarPassDto,
+    ) {
+        const { passwordActual, newPassword, confirmNewPass } = body;
+        const user = await this.authService.validarUser(
+            req.user.email,
+            passwordActual,
+        );
+        this.authService.compararPassword(newPassword, confirmNewPass);
+        user.passwordHash = await this.authService.hashPass(newPassword);
+        await this.authService.guardar(user);
+        return { msg: 'Contraseña cambiada correctamente' };
     }
 }

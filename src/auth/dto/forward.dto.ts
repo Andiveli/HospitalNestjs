@@ -7,4 +7,3 @@ export class ForwardDto {
     email: string;
     token: string;
 }
-

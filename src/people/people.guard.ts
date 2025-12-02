@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import UserRequest from './people.request';
 import { Request } from 'express';
+import { Rol } from 'src/roles/roles.enum';
 
 @Injectable()
 export class PeopleGuard implements CanActivate {
@@ -15,7 +16,8 @@ export class PeopleGuard implements CanActivate {
             throw new ForbiddenException('Usuario no autenticado');
         }
         const user = request.user as UserRequest['user'];
-        if (user.rol !== 'admin') {
+        const userRoles: string[] = user.roles || [];
+        if (!userRoles.includes(Rol.Admin)) {
             throw new ForbiddenException('Solo administradores pueden acceder');
         }
         return true;

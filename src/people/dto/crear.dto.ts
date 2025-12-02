@@ -8,5 +8,5 @@ export class CrearDto {
 
     @IsString()
     @IsNotEmpty({ message: 'El rol es requerido' })
-    rol: string;
+    rol: string[];
 }

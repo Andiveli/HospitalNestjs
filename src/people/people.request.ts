@@ -2,8 +2,8 @@ import { Request } from 'express';
 
 export default interface UserRequest extends Request {
     user: {
-        id: string;
+        id: number;
         email: string;
-        rol: string;
+        roles: string[];
     };
 }

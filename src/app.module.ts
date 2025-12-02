@@ -1,14 +1,31 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
-import { PeopleModule } from './people/people.module';
-import { EmailModule } from './email/email.module';
-import { CitasModule } from './citas/citas.module';
 import * as Joi from 'joi';
+import { AuthModule } from './auth/auth.module';
+import { CitasModule } from './citas/citas.module';
+import { EmailModule } from './email/email.module';
+import { EnfermedadesModule } from './enfermedades/enfermedades.module';
+import { PacientesModule } from './pacientes/pacientes.module';
+import { PeopleModule } from './people/people.module';
+import { TipoEnfermedadModule } from './tipo-enfermedad/tipo-enfermedad.module';
+import { RolesModule } from './roles/roles.module';
+import { GenerosModule } from './generos/generos.module';
+import { EstadoVidaModule } from './estado-vida/estado-vida.module';
+import { PaisesModule } from './paises/paises.module';
+import { SangreModule } from './sangre/sangre.module';
+import { EstiloVidaModule } from './estilo-vida/estilo-vida.module';
+import { PermisosModule } from './permisos/permisos.module';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
     imports: [
+        BullModule.forRoot({
+            redis: {
+                host: 'localhost',
+                port: 6379,
+            },
+        }),
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: `.env`,
@@ -32,7 +49,7 @@ import * as Joi from 'joi';
                 database: configService.get<string>('DB_NAME'),
                 port: configService.get<number>('DB_PORT'),
                 autoLoadEntities: true,
-                synchronize: true,
+                // synchronize: true,
                 retryDelay: 3000,
             }),
         }),
@@ -40,6 +57,16 @@ import * as Joi from 'joi';
         PeopleModule,
         EmailModule,
         CitasModule,
+        PacientesModule,
+        EnfermedadesModule,
+        TipoEnfermedadModule,
+        RolesModule,
+        GenerosModule,
+        EstadoVidaModule,
+        PaisesModule,
+        SangreModule,
+        EstiloVidaModule,
+        PermisosModule,
     ],
 })
 export class AppModule {}
