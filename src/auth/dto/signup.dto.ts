@@ -2,12 +2,22 @@ import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class SingupDto {
     @IsString()
-    @IsNotEmpty({ message: 'El nombre es requerido' })
-    nombre: string;
+    @IsNotEmpty({ message: 'La cédula es requerida' })
+    cedula: string;
 
     @IsString()
-    @IsNotEmpty({ message: 'El apellido es requerido' })
-    apellido: string;
+    @IsNotEmpty({ message: 'El primer nombre es requerido' })
+    primerNombre: string;
+
+    @IsString()
+    segundoNombre?: string;
+
+    @IsString()
+    @IsNotEmpty({ message: 'El primer apellido es requerido' })
+    primerApellido: string;
+
+    @IsString()
+    segundoApellido?: string;
 
     @IsString()
     @IsNotEmpty({ message: 'El email es requerido' })
@@ -16,7 +26,7 @@ export class SingupDto {
 
     @IsString()
     @IsNotEmpty({ message: 'El password es requerido' })
-    password: string;
+    passwordHash: string;
 
     @IsString()
     @IsNotEmpty({ message: 'Debes comprobar tu password' })

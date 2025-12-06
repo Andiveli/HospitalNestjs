@@ -7,9 +7,10 @@ import {
     Post,
     UseGuards,
 } from '@nestjs/common';
-import { PeopleService } from './people.service';
 import { CrearDto } from './dto/crear.dto';
+import { PeopleService } from './people.service';
 import { PeopleGuard } from './people.guard';
+import { Rol } from 'src/roles/roles.enum';
 
 @Controller('people')
 export class PeopleController {
@@ -19,27 +20,31 @@ export class PeopleController {
     @Post('medico')
     @HttpCode(HttpStatus.CREATED)
     async crearMedico(@Body() medico: CrearDto) {
-        return this.peopleService.crearMedico(medico);
+        await this.peopleService.rolToPerson(medico.email, Rol.Medico);
     }
 
     @UseGuards(PeopleGuard)
     @Post('paciente')
     @HttpCode(HttpStatus.CREATED)
     async crearPaciente(@Body() paciente: CrearDto) {
-        return this.peopleService.crearPaciente(paciente);
+        return this.peopleService.rolToPerson(paciente.email, Rol.Paciente);
     }
 
     @UseGuards(PeopleGuard)
     @Get('medicos')
     @HttpCode(HttpStatus.ACCEPTED)
     async listarMedicos() {
-        return this.peopleService.listarMedicos();
+        const medicos = await this.peopleService.listarUserRol(Rol.Medico);
+        if (medicos.length === 0)
+            return { msg: 'La lista de médicos está vacía' };
     }
 
     @UseGuards(PeopleGuard)
     @Get('pacientes')
     @HttpCode(HttpStatus.ACCEPTED)
     async listarPacientes() {
-        return this.peopleService.listarPacientes();
+        const pacientes = await this.peopleService.listarUserRol(Rol.Paciente);
+        if (pacientes.length === 0)
+            return { msg: 'La lista de pacientes está vacía' };
     }
 }
