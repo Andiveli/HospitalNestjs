@@ -13,6 +13,7 @@ import { PacientesService } from './pacientes.service';
 import UserRequest from 'src/people/people.request';
 import { InfoDto } from './dto/info.dto';
 import { DocsDto } from './dto/doc.dto';
+import { PacientesEntity } from './pacientes.entity';
 
 @Controller('pacientes')
 export class PacientesController {
@@ -21,16 +22,23 @@ export class PacientesController {
     @Roles(Rol.Paciente)
     @Post('addInfo')
     @HttpCode(HttpStatus.CREATED)
-    async addInfo(@Request() req: UserRequest, @Body() body: InfoDto) {
-        await this.pacientesService.addInfo(body, req.user.email);
+    async addInfo(
+        @Request() req: UserRequest,
+        @Body() body: InfoDto,
+    ): Promise<{ msg: string; data: PacientesEntity }> {
+        const result = await this.pacientesService.addInfo(
+            body,
+            req.user.email,
+        );
+        return { msg: 'Información agregada correctamente', data: result };
     }
 
     @Roles(Rol.Paciente)
-    @Get('myinfo')
+    @Get('myInfo')
     @HttpCode(HttpStatus.OK)
     async getInfo(@Request() req: UserRequest) {
         const result = await this.pacientesService.getInfo(req.user.id);
-        console.log(result);
+        return result;
     }
 
     @Roles(Rol.Paciente)

@@ -29,7 +29,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             throw (
                 err ||
                 new UnauthorizedException({
-                    error: 'El usuario no tiene permisos',
+                    error: 'El usuario no esta autenticado',
                 })
             );
         }

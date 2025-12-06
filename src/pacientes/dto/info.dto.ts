@@ -1,6 +1,12 @@
-import { IsAlpha, IsNotEmpty, IsString, Matches } from 'class-validator';
+import {
+    IsDateString,
+    IsNotEmpty,
+    IsString,
+    Matches,
+    IsEnum,
+} from 'class-validator';
 
-enum Sangre {
+export enum Sangre {
     A_POSITIVE = 'A+',
     A_NEGATIVE = 'A-',
     B_POSITIVE = 'B+',
@@ -11,15 +17,15 @@ enum Sangre {
     O_NEGATIVE = 'O-',
 }
 
-export enum EstadoVida {
-    Activo = 'activo',
-    Sedentario = 'sedentario',
+export enum EstiloVida {
+    ACTIVO = 'activo',
+    SEDENTARIO = 'sedentario',
 }
 
 export class InfoDto {
-    @IsAlpha()
-    @IsNotEmpty({ message: 'Tienes que agregar tu edad' })
-    edad: number;
+    @IsDateString({}, { message: 'Formato de fecha incorrecto (YYYY-MM-DD' })
+    @IsNotEmpty({ message: 'Tienes que agregar tu fecha de nacimiento' })
+    fecha: string;
 
     @IsString()
     @IsNotEmpty({ message: 'Tienes que agregar tu numero de telefono' })
@@ -36,15 +42,16 @@ export class InfoDto {
     @IsNotEmpty({ message: 'Tienes que agregar tu pais' })
     pais: string;
 
-    @IsString()
-    @IsNotEmpty({ message: 'Tienes que agregar tu genero' })
-    genero: string;
-
-    @IsString()
+    @IsEnum(Sangre, {
+        message:
+            'Grupo sanguíneo no válido. Opciones: A+, A-, B+, B-, AB+, AB-, O+, O-',
+    })
     @IsNotEmpty({ message: 'Tienes que agregar tu grupo sanguineo' })
     sangre: Sangre;
 
-    @IsString()
-    @IsNotEmpty({ message: 'Tienes que agregar tu estado de vida' })
-    estadoVida: EstadoVida;
+    @IsEnum(EstiloVida, {
+        message: 'Estilo de vida no válido. Opciones: Activo, Sedentario',
+    })
+    @IsNotEmpty({ message: 'Tienes que agregar tu estilo de vida' })
+    estiloVida: EstiloVida;
 }

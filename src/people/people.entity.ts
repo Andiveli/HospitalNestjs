@@ -61,10 +61,10 @@ export class PeopleEntity {
         unique: true,
         name: 'token',
     })
-    token: string;
+    token: string | null;
 
     @Column('timestamp', { nullable: true, name: 'token_expiracion' })
-    tokenExpiracion: Date;
+    tokenExpiracion: Date | null;
 
     @ManyToOne(() => GeneroEntity)
     @JoinColumn({ name: 'genero_id' })

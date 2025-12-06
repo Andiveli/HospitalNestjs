@@ -1,8 +1,17 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import {
+    IsEmail,
+    IsNotEmpty,
+    IsNumber,
+    IsString,
+    Matches,
+} from 'class-validator';
 
 export class SingupDto {
     @IsString()
     @IsNotEmpty({ message: 'La cédula es requerida' })
+    @Matches(/^[0-9]{10}$/, {
+        message: 'La cédula debe tener 10 dígitos numéricos',
+    })
     cedula: string;
 
     @IsString()
@@ -31,4 +40,8 @@ export class SingupDto {
     @IsString()
     @IsNotEmpty({ message: 'Debes comprobar tu password' })
     confirmPassword: string;
+
+    @IsNumber()
+    @IsNotEmpty({ message: 'Tu género es requerido' })
+    genero: number;
 }

@@ -20,6 +20,7 @@ import { CambiarPassDto } from './dto/cambiarPass.dto';
  * Controlador de autenticación
  * Maneja el registro, login, confirmación de usuarios y recuperación de contraseña
  */
+
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
@@ -38,7 +39,11 @@ export class AuthController {
             body.passwordHash,
             body.confirmPassword,
         );
-        await this.authService.guardar(body);
+        const { genero, ...rest } = body;
+        await this.authService.guardar({
+            ...rest,
+            genero: await this.authService.getGeneroById(genero),
+        });
         return { msg: 'Usuario registrado correctamente' };
     }
 
@@ -54,7 +59,9 @@ export class AuthController {
         @Param('token') token: string,
     ): Promise<{ msg: string }> {
         const usuarioConfirmar = await this.authService.confirmarUsuario(token);
-        usuarioConfirmar.token = '';
+        this.authService.validarTokenExpiracion(usuarioConfirmar);
+        usuarioConfirmar.token = null;
+        usuarioConfirmar.tokenExpiracion = null;
         usuarioConfirmar.verificado = true;
         await this.authService.guardar(usuarioConfirmar);
         return { msg: 'Usuario confirmado correctamente' };
@@ -122,9 +129,11 @@ export class AuthController {
         @Body('confirmPassword') confirmPassword: string,
     ): Promise<{ msg: string }> {
         const usuario = await this.authService.confirmarUsuario(token);
+        this.authService.validarTokenExpiracion(usuario);
         this.authService.compararPassword(password, confirmPassword);
         usuario.passwordHash = await this.authService.hashPass(password);
         usuario.token = '';
+        usuario.tokenExpiracion = null;
         await this.authService.guardar(usuario);
         return { msg: 'Contraseña reestablecida correctamente' };
     }
@@ -145,4 +154,11 @@ export class AuthController {
         await this.authService.guardar(user);
         return { msg: 'Contraseña cambiada correctamente' };
     }
+
+    @Get('perfil')
+    @HttpCode(HttpStatus.OK)
+    async getMiPerfil(@Request() req: UserRequest) {
+        return await this.authService.obtenerPerfilesCompletos(req.user.email);
+    }
+    //Commit de prueba
 }

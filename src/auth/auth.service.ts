@@ -1,6 +1,8 @@
+import { InjectQueue } from '@nestjs/bullmq';
 import {
     BadRequestException,
     ConflictException,
+    Inject,
     Injectable,
     NotFoundException,
     UnauthorizedException,
@@ -8,23 +10,32 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { compare, hash } from 'bcrypt';
+import { Queue } from 'bullmq';
+import type { Cache } from 'cache-manager';
 import { randomBytes } from 'crypto';
-import { PeopleEntity } from 'src/people/people.entity';
-import { Repository } from 'typeorm';
-import { AuthInterface } from './auth.interface';
 import { EstadoUsuarioEntity } from 'src/estado-vida/estado-vida.entity';
 import { GeneroEntity } from 'src/generos/generos.entity';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import { PeopleEntity } from 'src/people/people.entity';
+import { PerfilContext } from 'src/perfiles/perfil.context';
+import { RolesEntity } from 'src/roles/roles.entity';
+import { Repository } from 'typeorm';
+import { AuthInterface } from './auth.interface';
 
 @Injectable()
 export class AuthService {
     constructor(
+        private jwtService: JwtService,
         @InjectRepository(PeopleEntity)
         private authRepository: Repository<PeopleEntity>,
-        private jwtService: JwtService,
         @InjectQueue('email')
         private emailQueue: Queue,
+        @Inject('CACHE_MANAGER')
+        private cache: Cache,
+        @InjectRepository(GeneroEntity)
+        private genero: Repository<GeneroEntity>,
+        @InjectRepository(RolesEntity)
+        private rolesRepository: Repository<RolesEntity>,
+        private perfilContext: PerfilContext,
     ) {}
 
     /**
@@ -62,44 +73,57 @@ export class AuthService {
             if (enviarEmail) {
                 return await this.enviarRecuperacionEmail(existe);
             }
-            return await this.authRepository.save(usuario);
+            const user = await this.authRepository.save(usuario);
+            await this.cache.del(this.cacheKey(user.email));
+            return user;
         }
         return await this.crearUsuarioToken(usuario);
     }
 
+    async getGeneroById(id: number): Promise<GeneroEntity> {
+        const genero = await this.genero.findOne({ where: { id } });
+        if (!genero) throw new NotFoundException('Género no valido');
+        return genero;
+    }
+
     async crearUsuarioToken(usuario: AuthInterface) {
-        if (
-            await this.authRepository.findOne({
-                where: { cedula: usuario.cedula },
-            })
-        )
-            throw new ConflictException('La cédula ya está registrada');
+        const existe = await this.authRepository.findOne({
+            where: { cedula: usuario.cedula },
+        });
+        if (existe) throw new ConflictException('La cédula ya está registrada');
+        const rolPaciente = await this.rolesRepository.findOne({
+            where: { nombre: 'paciente' },
+        });
+        if (!rolPaciente)
+            throw new NotFoundException('Rol por defecto no encontrado');
         const nuevoUsuario = this.authRepository.create(usuario);
         nuevoUsuario.passwordHash = await this.hashPass(usuario.passwordHash);
         nuevoUsuario.fechaCreacion = new Date();
         nuevoUsuario.token = randomBytes(32).toString('hex');
-        nuevoUsuario.genero = { id: 1 } as GeneroEntity;
         nuevoUsuario.estado = { id: 1 } as EstadoUsuarioEntity;
         nuevoUsuario.tokenExpiracion = new Date(
             Date.now() + 24 * 60 * 60 * 1000,
         );
+
+        // Asignar el rol por defecto
+        nuevoUsuario.roles = [rolPaciente];
+
         const user = await this.authRepository.save(nuevoUsuario);
         await this.emailQueue.add('sendEmail', {
             email: nuevoUsuario.email,
             nombre: nuevoUsuario.primerNombre,
             token: nuevoUsuario.token,
-            recovery: false,
         });
         return user;
     }
 
     async enviarRecuperacionEmail(existe: PeopleEntity) {
         existe.token = randomBytes(32).toString('hex');
+        existe.tokenExpiracion = new Date(Date.now() + 24 * 60 * 60 * 1000);
         await this.emailQueue.add('sendRecovery', {
             email: existe.email,
             nombre: existe.primerNombre,
             token: existe.token,
-            recovery: true,
         });
         return await this.authRepository.save(existe);
     }
@@ -178,5 +202,34 @@ export class AuthService {
             roles: userWithRoles.roles.map((role) => role.nombre),
         };
         return this.jwtService.signAsync(payload);
+    }
+
+    validarTokenExpiracion(usuario: PeopleEntity) {
+        const fechaExp = usuario.tokenExpiracion;
+        if (!fechaExp || fechaExp < new Date()) {
+            throw new BadRequestException('El token ha expirado');
+        }
+        return;
+    }
+
+    async obtenerPerfilesCompletos(email: string) {
+        const userCached = await this.cache.get(this.cacheKey(email));
+        if (userCached) {
+            console.log('Cache hit for user:', email);
+            return userCached;
+        }
+        const user = await this.authRepository.findOne({
+            where: { email },
+            relations: ['roles'],
+        });
+        if (!user) throw new NotFoundException('El usuario no existe');
+        const perfil = await this.perfilContext.obtenerPerfilesCompletos(user);
+        await this.cache.set(this.cacheKey(user.email), perfil);
+        console.log('Cache set for user:', user.email);
+        return perfil;
+    }
+
+    private cacheKey(email: string) {
+        return `user:${email}`;
     }
 }

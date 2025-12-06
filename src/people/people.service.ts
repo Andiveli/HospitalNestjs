@@ -17,7 +17,29 @@ export class PeopleService {
             .createQueryBuilder('user')
             .innerJoin('user.roles', 'role')
             .where('role.nombre = :roleName', { roleName: roleName })
+            .andWhere('user.verificado = :verificado', { verificado: true })
             .leftJoinAndSelect('user.roles', 'userRoles')
+            .leftJoinAndSelect('user.genero', 'genero')
+            .leftJoinAndSelect('user.estado', 'estado')
+            .select([
+                'user.id',
+                'user.cedula',
+                'user.primerNombre',
+                'user.segundoNombre',
+                'user.primerApellido',
+                'user.segundoApellido',
+                'user.email',
+                'user.verificado',
+                'user.fechaCreacion',
+                'user.imageUrl',
+                'genero.id',
+                'genero.nombre',
+                'estado.id',
+                'estado.nombre',
+                'userRoles.id',
+                'userRoles.nombre',
+                'userRoles.descripcion',
+            ])
             .getMany();
     }
 

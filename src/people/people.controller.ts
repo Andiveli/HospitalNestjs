@@ -7,6 +7,7 @@ import {
     Post,
     UseGuards,
 } from '@nestjs/common';
+import { Public } from 'src/auth/public.decorator';
 import { CrearDto } from './dto/crear.dto';
 import { PeopleService } from './people.service';
 import { PeopleGuard } from './people.guard';
@@ -37,6 +38,7 @@ export class PeopleController {
         const medicos = await this.peopleService.listarUserRol(Rol.Medico);
         if (medicos.length === 0)
             return { msg: 'La lista de médicos está vacía' };
+        return medicos;
     }
 
     @UseGuards(PeopleGuard)
@@ -46,5 +48,6 @@ export class PeopleController {
         const pacientes = await this.peopleService.listarUserRol(Rol.Paciente);
         if (pacientes.length === 0)
             return { msg: 'La lista de pacientes está vacía' };
+        return pacientes;
     }
 }

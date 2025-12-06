@@ -1,3 +1,6 @@
+import { GeneroEntity } from 'src/generos/generos.entity';
+import { RolesEntity } from 'src/roles/roles.entity';
+
 export interface AuthInterface {
     cedula: string;
     primerNombre: string;
@@ -7,8 +10,9 @@ export interface AuthInterface {
     email: string;
     passwordHash: string;
     verificado?: boolean;
-    token?: string;
-    tokenExpiracion?: Date;
-    generoId?: number | null;
+    token?: string | null;
+    tokenExpiracion?: Date | null;
+    genero: GeneroEntity;
+    roles?: RolesEntity[];
     estadoId?: number | null;
 }

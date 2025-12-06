@@ -7,4 +7,7 @@ export class GrupoSanguineoEntity {
 
     @Column('varchar', { length: 100, name: 'nombre' })
     nombre: string;
+
+    @Column('text', { name: 'descripcion', nullable: true })
+    descripcion: string;
 }

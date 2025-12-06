@@ -1,24 +1,37 @@
-import { Process, Processor } from '@nestjs/bull';
-import { Job } from 'bull';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+import { Injectable } from '@nestjs/common';
 import { EmailService } from './email.service';
-@Processor('email')
-export class EmailProcessor {
-    constructor(private readonly emailService: EmailService) {}
 
-    @Process('sendEmail')
-    async handleSendVerification(
+@Injectable()
+@Processor('email')
+export class EmailProcessor extends WorkerHost {
+    constructor(private readonly emailService: EmailService) {
+        super();
+    }
+
+    async process(
         job: Job<{
             email: string;
             nombre: string;
             token: string;
-            recovery: boolean;
         }>,
-    ) {
-        const { email, nombre, token, recovery } = job.data;
+    ): Promise<void> {
+        const { email, nombre, token } = job.data;
 
-        if (recovery) {
-            await this.emailService.recuperarEmail(email, nombre, token);
+        console.log(`📧 Processing job: ${job.name} for ${email}`);
+
+        switch (job.name) {
+            case 'sendEmail':
+                await this.emailService.enviarEmail(email, nombre, token);
+                break;
+
+            case 'sendRecovery':
+                await this.emailService.recuperarEmail(email, nombre, token);
+                break;
+
+            default:
+                console.warn(`⚠️ Unknown job type: ${job.name}`);
         }
-        await this.emailService.enviarEmail(email, nombre, token);
     }
 }

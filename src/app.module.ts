@@ -16,12 +16,32 @@ import { PaisesModule } from './paises/paises.module';
 import { SangreModule } from './sangre/sangre.module';
 import { EstiloVidaModule } from './estilo-vida/estilo-vida.module';
 import { PermisosModule } from './permisos/permisos.module';
-import { BullModule } from '@nestjs/bull';
+import { BullModule } from '@nestjs/bullmq';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
+import { ScheduleModule } from '@nestjs/schedule';
+import { MedicosModule } from './medicos/medicos.module';
 
 @Module({
     imports: [
+        CacheModule.registerAsync({
+            isGlobal: true,
+            imports: [ConfigModule],
+            useFactory: async (configService: ConfigService) => ({
+                ttl: 60 * 1000,
+                store: await redisStore({
+                    socket: {
+                        host:
+                            configService.get<string>('REDIS_HOST') ||
+                            'localhost',
+                        port: configService.get<number>('REDIS_PORT') || 6379,
+                    },
+                }),
+            }),
+            inject: [ConfigService],
+        }),
         BullModule.forRoot({
-            redis: {
+            connection: {
                 host: 'localhost',
                 port: 6379,
             },
@@ -53,6 +73,7 @@ import { BullModule } from '@nestjs/bull';
                 retryDelay: 3000,
             }),
         }),
+        ScheduleModule.forRoot(),
         AuthModule,
         PeopleModule,
         EmailModule,
@@ -67,6 +88,7 @@ import { BullModule } from '@nestjs/bull';
         SangreModule,
         EstiloVidaModule,
         PermisosModule,
+        MedicosModule,
     ],
 })
 export class AppModule {}
