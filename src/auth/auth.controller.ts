@@ -160,5 +160,4 @@ export class AuthController {
     async getMiPerfil(@Request() req: UserRequest) {
         return await this.authService.obtenerPerfilesCompletos(req.user.email);
     }
-    //Commit de prueba
 }
