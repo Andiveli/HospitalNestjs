@@ -20,15 +20,17 @@ export class PeopleController {
     @UseGuards(PeopleGuard)
     @Post('medico')
     @HttpCode(HttpStatus.CREATED)
-    async crearMedico(@Body() medico: CrearDto) {
+    async crearMedico(@Body() medico: CrearDto): Promise<{ msg: string }> {
         await this.peopleService.rolToPerson(medico.email, Rol.Medico);
+        return { msg: 'Médico creado exitosamente' };
     }
 
     @UseGuards(PeopleGuard)
     @Post('paciente')
     @HttpCode(HttpStatus.CREATED)
-    async crearPaciente(@Body() paciente: CrearDto) {
-        return this.peopleService.rolToPerson(paciente.email, Rol.Paciente);
+    async crearPaciente(@Body() paciente: CrearDto): Promise<{ msg: string }> {
+        await this.peopleService.rolToPerson(paciente.email, Rol.Paciente);
+        return { msg: 'Paciente creado exitosamente' };
     }
 
     @UseGuards(PeopleGuard)

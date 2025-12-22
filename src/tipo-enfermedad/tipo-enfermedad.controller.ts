@@ -1,20 +1,19 @@
 import {
     Body,
     Controller,
+    Get,
     HttpCode,
     HttpStatus,
-    Post,
-    UseGuards,
-    HttpException,
-    Get,
     Param,
     ParseIntPipe,
     Patch,
+    Post,
+    UseGuards,
 } from '@nestjs/common';
 import { PeopleGuard } from 'src/people/people.guard';
-import { TipoEnfermedadService } from './tipo-enfermedad.service';
 import { UpdateDto } from './dto/updateDto';
 import { TiposEnfermedadEntity } from './tipo-enfermedad.entity';
+import { TipoEnfermedadService } from './tipo-enfermedad.service';
 
 @Controller('tipo-enfermedad')
 export class TipoEnfermedadController {
@@ -24,13 +23,7 @@ export class TipoEnfermedadController {
     @Post('addTipo')
     @HttpCode(HttpStatus.CREATED)
     async addTipo(@Body() body: UpdateDto): Promise<{ msg: string }> {
-        const result = await this.tipoService.addTipo(body);
-        if (!result) {
-            throw new HttpException(
-                'Error al agregar el tipo de enfermedad',
-                HttpStatus.BAD_REQUEST,
-            );
-        }
+        await this.tipoService.addTipo(body);
         return { msg: 'Tipo de enfermedad agregado correctamente' };
     }
 
@@ -49,14 +42,7 @@ export class TipoEnfermedadController {
     @Get('tipos/:id')
     @HttpCode(HttpStatus.ACCEPTED)
     async getTipoById(@Param('id', ParseIntPipe) id: number) {
-        const tipo = await this.tipoService.getTipoById(id);
-        if (!tipo) {
-            throw new HttpException(
-                { msg: 'Tipo invalido, no existe' },
-                HttpStatus.BAD_REQUEST,
-            );
-        }
-        return { msg: tipo };
+        return await this.tipoService.getTipoById(id);
     }
 
     @UseGuards(PeopleGuard)

@@ -84,6 +84,9 @@ export class PacientesService {
                 'pais',
                 'grupoSanguineo',
                 'estiloVida',
+                'pacienteEnfermedades',
+                'pacienteEnfermedades.enfermedad',
+                'pacienteEnfermedades.tipoEnfermedad',
             ],
         });
         if (!paciente) throw new NotFoundException('Paciente no encontrado');
@@ -91,9 +94,25 @@ export class PacientesService {
     }
 
     private formatearDatos(paciente: PacientesEntity) {
-        const { person, pais, grupoSanguineo, estiloVida } = paciente;
+        const {
+            person,
+            pais,
+            grupoSanguineo,
+            estiloVida,
+            pacienteEnfermedades,
+        } = paciente;
+
+        const enfermedades =
+            pacienteEnfermedades?.reduce((acc, relacion) => {
+                if (relacion.enfermedad && relacion.tipoEnfermedad) {
+                    acc[relacion.enfermedad.nombre] =
+                        relacion.tipoEnfermedad.nombre;
+                }
+                return acc;
+            }, {}) || {};
+
         return {
-            nombres: `${person.primerNombre} ${person.segundoNombre} ${person.primerApellido} ${person.segundoApellido} ${person.segundoApellido}`,
+            nombres: `${person.primerNombre} ${person.segundoNombre} ${person.primerApellido} ${person.segundoApellido}`,
             edad: this.calcularEdad(paciente.fechaNacimiento),
             email: person.email,
             telefono: paciente.numeroCelular,
@@ -103,6 +122,7 @@ export class PacientesService {
             sangre: grupoSanguineo.nombre,
             estilo: estiloVida.nombre,
             imagen: person.imageUrl,
+            enfermedades: enfermedades,
         };
     }
 

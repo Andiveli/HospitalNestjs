@@ -1,4 +1,5 @@
 import { EstiloVidaEntity } from 'src/estilo-vida/estilo-vida.entity';
+import { PacienteEnfermedadEntity } from 'src/paciente-enfermedad/paciente-enfermedad.entity';
 import { PaisEntity } from 'src/paises/paises.entity';
 import { PeopleEntity } from 'src/people/people.entity';
 import { GrupoSanguineoEntity } from 'src/sangre/sangre.entity';
@@ -7,6 +8,7 @@ import {
     Entity,
     JoinColumn,
     ManyToOne,
+    OneToMany,
     OneToOne,
     PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -44,4 +46,10 @@ export class PacientesEntity {
     @ManyToOne(() => EstiloVidaEntity, { nullable: false })
     @JoinColumn({ name: 'estilo_vida_id' })
     estiloVida: EstiloVidaEntity;
+
+    @OneToMany(
+        () => PacienteEnfermedadEntity,
+        (pacienteEnfermedad) => pacienteEnfermedad.paciente,
+    )
+    pacienteEnfermedades: PacienteEnfermedadEntity[];
 }

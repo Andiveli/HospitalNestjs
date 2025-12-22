@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    ConflictException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RolesEntity } from 'src/roles/roles.entity';
 import { Repository } from 'typeorm';
@@ -54,7 +58,8 @@ export class PeopleService {
         });
         if (!roles) throw new NotFoundException('Rol no encontrado');
         const hasRole = user.roles.some((r) => r.nombre === rol);
-        if (hasRole) return user;
+        if (hasRole)
+            throw new ConflictException('El usuario ya tiene este rol');
         user.roles.push(roles);
         return this.peopleRepository.save(user);
     }

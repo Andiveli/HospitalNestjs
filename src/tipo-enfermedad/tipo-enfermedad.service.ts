@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    ConflictException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { TiposEnfermedadEntity } from './tipo-enfermedad.entity';
 import { Repository } from 'typeorm';
 import { UpdateDto } from './dto/updateDto';
@@ -11,13 +15,14 @@ export class TipoEnfermedadService {
         private readonly tipoRepository: Repository<TiposEnfermedadEntity>,
     ) {}
 
-    async addTipo(tipo: UpdateDto): Promise<boolean> {
+    async addTipo(tipo: UpdateDto): Promise<TiposEnfermedadEntity> {
         const { nombre } = tipo;
         const existe = await this.tipoRepository.findOne({ where: { nombre } });
-        if (existe) return false;
+        if (existe)
+            throw new ConflictException('El tipo de enfermedad ya existe');
         const nuevoTipo = this.tipoRepository.create(tipo);
         const resultado = await this.tipoRepository.save(nuevoTipo);
-        return resultado ? true : false;
+        return resultado;
     }
 
     async getTipos() {
@@ -26,7 +31,9 @@ export class TipoEnfermedadService {
     }
 
     async getTipoById(id: number): Promise<TiposEnfermedadEntity | null> {
-        return await this.tipoRepository.findOne({ where: { id } });
+        const tipo = await this.tipoRepository.findOne({ where: { id } });
+        if (!tipo) throw new NotFoundException('Tipo no encontrado');
+        return tipo;
     }
 
     async updateTipo(

@@ -9,12 +9,15 @@ import {
     Request,
     UseGuards,
 } from '@nestjs/common';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SingupDto } from './dto/signup.dto';
+import { LoginDto } from './dto/login.dto';
 import { LocalAuthGuard } from './local.guard';
 import { Public } from './public.decorator';
 import UserRequest from 'src/people/people.request';
 import { CambiarPassDto } from './dto/cambiarPass.dto';
+import { SWAGGER_RESPONSES } from '../common/constants/swagger.constants';
 
 /**
  * Controlador de autenticación
@@ -33,6 +36,26 @@ export class AuthController {
     @Public()
     @Post()
     @HttpCode(HttpStatus.CREATED)
+    @ApiOperation({
+        summary: 'Registrar nuevo usuario',
+        description:
+            'Crea una nueva cuenta de usuario en el sistema y envía email de confirmación',
+    })
+    @ApiResponse({
+        status: 201,
+        description: 'Usuario registrado correctamente',
+        schema: {
+            type: 'object',
+            properties: {
+                msg: {
+                    type: 'string',
+                    example: 'Usuario registrado correctamente',
+                },
+            },
+        },
+    })
+    @ApiResponse(SWAGGER_RESPONSES.BAD_REQUEST)
+    @ApiResponse(SWAGGER_RESPONSES.CONFLICT)
     async signUp(@Body() body: SingupDto): Promise<{ msg: string }> {
         await this.authService.noExisteEmail(body.email);
         this.authService.compararPassword(
@@ -76,7 +99,27 @@ export class AuthController {
     @UseGuards(LocalAuthGuard)
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    async auth(@Request() req: UserRequest) {
+    @ApiOperation({
+        summary: 'Iniciar sesión de usuario',
+        description:
+            'Autentica un usuario con email y contraseña y devuelve un token JWT',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Login exitoso',
+        schema: {
+            type: 'object',
+            properties: {
+                token: {
+                    type: 'string',
+                    description: 'Token JWT para autenticación',
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+                },
+            },
+        },
+    })
+    @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
+    async auth(@Request() req: UserRequest, @Body() _loginData: LoginDto) {
         return { token: await this.authService.generarJWT(req.user.email) };
     }
 
