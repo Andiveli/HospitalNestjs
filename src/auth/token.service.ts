@@ -4,6 +4,10 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PeopleEntity } from 'src/people/people.entity';
 
+/**
+ * Servicio de limpieza automática de tokens expirados
+ * Se ejecuta mediante cron job para mantener la base de datos limpia
+ */
 @Injectable()
 export class TokenCleanupService {
     private readonly logger = new Logger(TokenCleanupService.name);
@@ -13,7 +17,11 @@ export class TokenCleanupService {
         private readonly peopleRepo: Repository<PeopleEntity>,
     ) {}
 
-    // Corre todos los días a medianoche. Puedes cambiarlo.
+    /**
+     * Limpia todos los tokens de verificación/recuperación que han expirado
+     * Se ejecuta automáticamente todos los días a medianoche
+     * Elimina el token y su fecha de expiración de usuarios con tokens vencidos
+     */
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async clearExpiredTokens() {
         const now = new Date();

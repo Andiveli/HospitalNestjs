@@ -80,12 +80,22 @@ export class AuthService {
         return await this.crearUsuarioToken(usuario);
     }
 
+    /**
+     * Obtiene un género por su ID
+     * @param id - ID del género a buscar
+     * @returns Género encontrado, lanza excepción si no existe
+     */
     async getGeneroById(id: number): Promise<GeneroEntity> {
         const genero = await this.genero.findOne({ where: { id } });
         if (!genero) throw new NotFoundException('Género no valido');
         return genero;
     }
 
+    /**
+     * Crea un nuevo usuario con token de verificación y envía email de confirmación
+     * @param usuario - Datos del nuevo usuario a crear
+     * @returns Usuario creado con token generado
+     */
     async crearUsuarioToken(usuario: AuthInterface) {
         const existe = await this.authRepository.findOne({
             where: { cedula: usuario.cedula },
@@ -117,6 +127,11 @@ export class AuthService {
         return user;
     }
 
+    /**
+     * Genera token de recuperación y envía email al usuario
+     * @param existe - Usuario existente al que se le enviará recuperación
+     * @returns Usuario actualizado con token de recuperación
+     */
     async enviarRecuperacionEmail(existe: PeopleEntity) {
         existe.token = randomBytes(32).toString('hex');
         existe.tokenExpiracion = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -204,6 +219,11 @@ export class AuthService {
         return this.jwtService.signAsync(payload);
     }
 
+    /**
+     * Valida que el token no haya expirado
+     * @param usuario - Usuario con token a validar
+     * @throws BadRequestException si el token ha expirado o es inválido
+     */
     validarTokenExpiracion(usuario: PeopleEntity) {
         const fechaExp = usuario.tokenExpiracion;
         if (!fechaExp || fechaExp < new Date()) {
@@ -212,6 +232,11 @@ export class AuthService {
         return;
     }
 
+    /**
+     * Obtiene el perfil completo del usuario con caché para optimizar rendimiento
+     * @param email - Email del usuario a buscar
+     * @returns Perfil completo del usuario con todos sus datos relacionados
+     */
     async obtenerPerfilesCompletos(email: string) {
         const userCached = await this.cache.get(this.cacheKey(email));
         if (userCached) {
@@ -229,6 +254,12 @@ export class AuthService {
         return perfil;
     }
 
+    /**
+     * Genera la clave de caché para un usuario
+     * @private
+     * @param email - Email del usuario
+     * @returns Clave de caché formateada
+     */
     private cacheKey(email: string) {
         return `user:${email}`;
     }

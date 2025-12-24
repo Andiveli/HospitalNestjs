@@ -9,21 +9,40 @@ import {
     Request,
     UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+    ApiBadRequestResponse,
+    ApiBody,
+    ApiConflictResponse,
+    ApiCreatedResponse,
+    ApiNotFoundResponse,
+    ApiOkResponse,
+    ApiOperation,
+    ApiParam,
+    ApiTags,
+    ApiUnauthorizedResponse,
+    ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
+import UserRequest from 'src/people/people.request';
 import { AuthService } from './auth.service';
-import { SingupDto } from './dto/signup.dto';
+import {
+    AuthResponseDto,
+    MensajeResponseDto,
+    PerfilResponseDto,
+} from './dto/auth-response.dto';
+import { CambiarPassDto } from './dto/cambiarPass.dto';
 import { LoginDto } from './dto/login.dto';
+import { OlvidePasswordDto } from './dto/olvidePassword.dto';
+import { RestablecerPasswordDto } from './dto/restablecerPassword.dto';
+import { SingupDto } from './dto/signup.dto';
 import { LocalAuthGuard } from './local.guard';
 import { Public } from './public.decorator';
-import UserRequest from 'src/people/people.request';
-import { CambiarPassDto } from './dto/cambiarPass.dto';
-import { SWAGGER_RESPONSES } from '../common/constants/swagger.constants';
 
 /**
  * Controlador de autenticación
  * Maneja el registro, login, confirmación de usuarios y recuperación de contraseña
  */
 
+@ApiTags('Autenticación')
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
@@ -41,21 +60,16 @@ export class AuthController {
         description:
             'Crea una nueva cuenta de usuario en el sistema y envía email de confirmación',
     })
-    @ApiResponse({
-        status: 201,
-        description: 'Usuario registrado correctamente',
-        schema: {
-            type: 'object',
-            properties: {
-                msg: {
-                    type: 'string',
-                    example: 'Usuario registrado correctamente',
-                },
-            },
-        },
+    @ApiBody({
+        type: SingupDto,
+        description: 'Datos del nuevo usuario a registrar',
     })
-    @ApiResponse(SWAGGER_RESPONSES.BAD_REQUEST)
-    @ApiResponse(SWAGGER_RESPONSES.CONFLICT)
+    @ApiCreatedResponse({
+        type: MensajeResponseDto,
+        description: 'Usuario registrado correctamente',
+    })
+    @ApiBadRequestResponse({ description: 'Datos inválidos o faltantes' })
+    @ApiConflictResponse({ description: 'El email ya está registrado' })
     async signUp(@Body() body: SingupDto): Promise<{ msg: string }> {
         await this.authService.noExisteEmail(body.email);
         this.authService.compararPassword(
@@ -78,6 +92,22 @@ export class AuthController {
     @Public()
     @Get('confirmar/:token')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Confirmar usuario',
+        description:
+            'Confirma la cuenta de usuario mediante el token enviado por email',
+    })
+    @ApiParam({
+        name: 'token',
+        description: 'Token de confirmación enviado al email del usuario',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    })
+    @ApiOkResponse({
+        type: MensajeResponseDto,
+        description: 'Usuario confirmado correctamente',
+    })
+    @ApiNotFoundResponse({ description: 'Token inválido o no encontrado' })
+    @ApiUnprocessableEntityResponse({ description: 'Token expirado' })
     async confirmarUsuario(
         @Param('token') token: string,
     ): Promise<{ msg: string }> {
@@ -104,21 +134,15 @@ export class AuthController {
         description:
             'Autentica un usuario con email y contraseña y devuelve un token JWT',
     })
-    @ApiResponse({
-        status: 200,
-        description: 'Login exitoso',
-        schema: {
-            type: 'object',
-            properties: {
-                token: {
-                    type: 'string',
-                    description: 'Token JWT para autenticación',
-                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-                },
-            },
-        },
+    @ApiBody({
+        type: LoginDto,
+        description: 'Credenciales del usuario',
     })
-    @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
+    @ApiOkResponse({
+        type: AuthResponseDto,
+        description: 'Login exitoso',
+    })
+    @ApiUnauthorizedResponse({ description: 'Credenciales inválidas' })
     async auth(@Request() req: UserRequest, @Body() _loginData: LoginDto) {
         return { token: await this.authService.generarJWT(req.user.email) };
     }
@@ -131,10 +155,24 @@ export class AuthController {
     @Public()
     @Post('olvide-password')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Solicitar recuperación de contraseña',
+        description:
+            'Envía un email con instrucciones para restablecer la contraseña',
+    })
+    @ApiBody({
+        type: OlvidePasswordDto,
+        description: 'Email del usuario que solicita recuperación',
+    })
+    @ApiOkResponse({
+        type: MensajeResponseDto,
+        description: 'Email de recuperación enviado correctamente',
+    })
+    @ApiNotFoundResponse({ description: 'Email no encontrado en el sistema' })
     async olvidePassword(
-        @Body('email') email: string,
+        @Body() body: OlvidePasswordDto,
     ): Promise<{ msg: string }> {
-        const usuario = await this.authService.getByEmail(email);
+        const usuario = await this.authService.getByEmail(body.email);
         await this.authService.guardar(usuario, true);
         return {
             msg: 'Se ha enviado un correo con las instrucciones para restablecer la contraseña',
@@ -149,6 +187,22 @@ export class AuthController {
     @Public()
     @Get('recuperar-password/:token')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Verificar token de recuperación',
+        description:
+            'Verifica si el token de recuperación de contraseña es válido',
+    })
+    @ApiParam({
+        name: 'token',
+        description: 'Token de recuperación de contraseña',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    })
+    @ApiOkResponse({
+        type: MensajeResponseDto,
+        description: 'Token válido, puede proceder con el cambio de contraseña',
+    })
+    @ApiNotFoundResponse({ description: 'Token inválido o no encontrado' })
+    @ApiUnprocessableEntityResponse({ description: 'Token expirado' })
     async comprobarToken(
         @Param('token') token: string,
     ): Promise<{ msg: string }> {
@@ -166,15 +220,36 @@ export class AuthController {
     @Public()
     @Post('recuperar-password/:token')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Restablecer contraseña',
+        description:
+            'Restablece la contraseña del usuario usando un token válido',
+    })
+    @ApiParam({
+        name: 'token',
+        description: 'Token de recuperación de contraseña',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    })
+    @ApiBody({
+        type: RestablecerPasswordDto,
+        description: 'Nueva contraseña y su confirmación',
+    })
+    @ApiOkResponse({
+        type: MensajeResponseDto,
+        description: 'Contraseña restablecida correctamente',
+    })
+    @ApiNotFoundResponse({ description: 'Token inválido o no encontrado' })
+    @ApiUnprocessableEntityResponse({
+        description: 'Token expirado o contraseñas no coinciden',
+    })
     async restablecer(
         @Param('token') token: string,
-        @Body('password') password: string,
-        @Body('confirmPassword') confirmPassword: string,
+        @Body() body: RestablecerPasswordDto,
     ): Promise<{ msg: string }> {
         const usuario = await this.authService.confirmarUsuario(token);
         this.authService.validarTokenExpiracion(usuario);
-        this.authService.compararPassword(password, confirmPassword);
-        usuario.passwordHash = await this.authService.hashPass(password);
+        this.authService.compararPassword(body.password, body.confirmPassword);
+        usuario.passwordHash = await this.authService.hashPass(body.password);
         usuario.token = '';
         usuario.tokenExpiracion = null;
         await this.authService.guardar(usuario);
@@ -183,6 +258,22 @@ export class AuthController {
 
     @Post('cambiarPass')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Cambiar contraseña',
+        description: 'Cambia la contraseña del usuario autenticado',
+    })
+    @ApiBody({
+        type: CambiarPassDto,
+        description: 'Contraseña actual y nueva contraseña',
+    })
+    @ApiOkResponse({
+        type: MensajeResponseDto,
+        description: 'Contraseña cambiada correctamente',
+    })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - contraseña actual inválida',
+    })
+    @ApiBadRequestResponse({ description: 'Nuevas contraseñas no coinciden' })
     async cambiarPass(
         @Request() req: UserRequest,
         @Body() body: CambiarPassDto,
@@ -200,6 +291,18 @@ export class AuthController {
 
     @Get('perfil')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Obtener perfil del usuario',
+        description:
+            'Obtiene la información completa del perfil del usuario autenticado',
+    })
+    @ApiOkResponse({
+        type: PerfilResponseDto,
+        description: 'Perfil del usuario obtenido correctamente',
+    })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - token inválido o ausente',
+    })
     async getMiPerfil(@Request() req: UserRequest) {
         return await this.authService.obtenerPerfilesCompletos(req.user.email);
     }
