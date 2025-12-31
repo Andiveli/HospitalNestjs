@@ -22,6 +22,7 @@ import { redisStore } from 'cache-manager-redis-yet';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MedicosModule } from './medicos/medicos.module';
 import { PacienteEnfermedadModule } from './paciente-enfermedad/paciente-enfermedad.module';
+import { DocumentsModule } from './documents/documents.module';
 
 @Module({
     imports: [
@@ -91,6 +92,7 @@ import { PacienteEnfermedadModule } from './paciente-enfermedad/paciente-enferme
         PermisosModule,
         MedicosModule,
         PacienteEnfermedadModule,
+        DocumentsModule,
     ],
 })
 export class AppModule {}

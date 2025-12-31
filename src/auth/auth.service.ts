@@ -168,7 +168,7 @@ export class AuthService {
      * @param email - Email del usuario a verificar
      * @returns Usuario confirmado, lanza excepción si no está confirmado o no existe
      */
-    async usuarioConfirmado(email: string) {
+    async usuarioConfirmado(email: string): Promise<PeopleEntity> {
         const usuario = await this.authRepository.findOne({ where: { email } });
         if (!usuario) throw new NotFoundException('Usuario no encontrado');
         if (!usuario.verificado)
@@ -229,7 +229,6 @@ export class AuthService {
         if (!fechaExp || fechaExp < new Date()) {
             throw new BadRequestException('El token ha expirado');
         }
-        return;
     }
 
     /**
