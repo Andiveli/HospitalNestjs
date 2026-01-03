@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PacientesEntity } from './pacientes.entity';
@@ -7,7 +7,9 @@ import { InfoDto } from './dto/info.dto';
 import { PaisEntity } from 'src/paises/paises.entity';
 import { EstiloVidaEntity } from 'src/estilo-vida/estilo-vida.entity';
 import { GrupoSanguineoEntity } from 'src/sangre/sangre.entity';
-import { Cache } from 'cache-manager';
+import { CommonService } from 'src/common/common.service';
+import { PerfilPaciente } from './dto/perfil.dto';
+import { PacienteEnfermedadEntity } from 'src/paciente-enfermedad/paciente-enfermedad.entity';
 
 @Injectable()
 export class PacientesService {
@@ -22,28 +24,8 @@ export class PacientesService {
         private vida: Repository<EstiloVidaEntity>,
         @InjectRepository(GrupoSanguineoEntity)
         private sangre: Repository<GrupoSanguineoEntity>,
-        @Inject('CACHE_MANAGER')
-        private cache: Cache,
+        private readonly commonService: CommonService,
     ) {}
-
-    async obtenerPerfil(email: string) {
-        // const user = await this.peopleRepository.findOne({ where: { email } });
-        // if (!user) throw new NotFoundException('Usuario no encontrado');
-        // const key = this.cacheKey(email);
-        // const userCached = await this.cache.get(key);
-        // if (userCached) {
-        //     console.log('Cache hit for key:', key);
-        //     return userCached;
-        // }
-        // console.log('Cache miss for key:', key);
-        // const userRol = await this.pacientesRepository.findOne({
-        //     where: { person: { user } },
-        // });
-    }
-
-    private cacheKey(email: string) {
-        return `user:${email}`;
-    }
 
     async addInfo(info: InfoDto, email: string) {
         const { fecha, telefono, residencia, pais, sangre, estiloVida } = info;
@@ -73,7 +55,7 @@ export class PacientesService {
         return await this.pacientesRepository.save(paciente);
     }
 
-    async getInfo(id: number) {
+    async getInfo(id: number): Promise<PerfilPaciente> {
         const paciente = await this.pacientesRepository.findOne({
             where: {
                 person: { id },
@@ -93,7 +75,7 @@ export class PacientesService {
         return this.formatearDatos(paciente);
     }
 
-    private formatearDatos(paciente: PacientesEntity) {
+    private formatearDatos(paciente: PacientesEntity): PerfilPaciente {
         const {
             person,
             pais,
@@ -102,18 +84,11 @@ export class PacientesService {
             pacienteEnfermedades,
         } = paciente;
 
-        const enfermedades =
-            pacienteEnfermedades?.reduce((acc, relacion) => {
-                if (relacion.enfermedad && relacion.tipoEnfermedad) {
-                    acc[relacion.enfermedad.nombre] =
-                        relacion.tipoEnfermedad.nombre;
-                }
-                return acc;
-            }, {}) || {};
+        const enfermedades = this.formatearSick(pacienteEnfermedades);
 
         return {
             nombres: `${person.primerNombre} ${person.segundoNombre} ${person.primerApellido} ${person.segundoApellido}`,
-            edad: this.calcularEdad(paciente.fechaNacimiento),
+            edad: this.commonService.calcularEdad(paciente.fechaNacimiento),
             email: person.email,
             telefono: paciente.numeroCelular,
             pais: pais.nombre,
@@ -126,20 +101,15 @@ export class PacientesService {
         };
     }
 
-    private calcularEdad(fecha: Date): number {
-        const hoy = new Date();
-        const fechaNacimiento = new Date(fecha);
-        let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
-        const mesActual = hoy.getMonth();
-        const diaActual = hoy.getDate();
-        const mesNacimiento = fechaNacimiento.getMonth();
-        const diaNacimiento = fechaNacimiento.getDate();
-        if (
-            mesActual < mesNacimiento ||
-            (mesActual === mesNacimiento && diaActual < diaNacimiento)
-        ) {
-            edad--;
-        }
-        return edad;
+    private formatearSick(pacienteEnfermedades: PacienteEnfermedadEntity[]) {
+        return (
+            pacienteEnfermedades?.reduce((acc, relacion) => {
+                if (relacion.enfermedad && relacion.tipoEnfermedad) {
+                    acc[relacion.enfermedad.nombre] =
+                        relacion.tipoEnfermedad.nombre;
+                }
+                return acc;
+            }, {}) || {}
+        );
     }
 }

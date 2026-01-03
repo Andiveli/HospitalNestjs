@@ -10,10 +10,20 @@ import {
     Post,
     ValidationPipe,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+    ApiBadRequestResponse,
+    ApiConflictResponse,
+    ApiCreatedResponse,
+    ApiForbiddenResponse,
+    ApiNoContentResponse,
+    ApiNotFoundResponse,
+    ApiOkResponse,
+    ApiOperation,
+    ApiResponse,
+    ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Roles } from 'src/roles/roles.decorator';
 import { Rol } from 'src/roles/roles.enum';
-import { SWAGGER_RESPONSES } from '../common/constants/swagger.constants';
 import { CreatePacienteEnfermedadDto } from './dto/create.dto';
 import { UpdatePacienteEnfermedadDto } from './dto/update.dto';
 import { PacienteEnfermedadEntity } from './paciente-enfermedad.entity';
@@ -32,11 +42,11 @@ export class PacienteEnfermedadController {
         description:
             'Registra una nueva relación entre un paciente y una enfermedad con su tipo y detalles correspondientes',
     })
-    @ApiResponse(SWAGGER_RESPONSES.CREATED(PacienteEnfermedadEntity))
-    @ApiResponse(SWAGGER_RESPONSES.BAD_REQUEST)
-    @ApiResponse(SWAGGER_RESPONSES.CONFLICT)
-    @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
-    @ApiResponse(SWAGGER_RESPONSES.FORBIDDEN)
+    @ApiCreatedResponse()
+    @ApiBadRequestResponse()
+    @ApiConflictResponse()
+    @ApiUnauthorizedResponse()
+    @ApiForbiddenResponse()
     @HttpCode(HttpStatus.CREATED)
     async create(
         @Body() createDto: CreatePacienteEnfermedadDto,
@@ -51,8 +61,8 @@ export class PacienteEnfermedadController {
         description:
             'Devuelve una lista completa de todas las relaciones entre pacientes y enfermedades registradas',
     })
-    @ApiResponse(SWAGGER_RESPONSES.OK(PacienteEnfermedadEntity))
-    @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
+    @ApiOkResponse()
+    @ApiUnauthorizedResponse()
     @HttpCode(HttpStatus.OK)
     findAll(): Promise<PacienteEnfermedadEntity[]> {
         return this.pacienteEnfermedadService.findAll();
@@ -65,9 +75,9 @@ export class PacienteEnfermedadController {
         description:
             'Devuelve todas las enfermedades registradas para un paciente específico con sus detalles',
     })
-    @ApiResponse(SWAGGER_RESPONSES.OK(PacienteEnfermedadEntity))
-    @ApiResponse(SWAGGER_RESPONSES.NOT_FOUND)
-    @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
+    @ApiOkResponse()
+    @ApiNotFoundResponse()
+    @ApiUnauthorizedResponse()
     @HttpCode(HttpStatus.OK)
     findByPaciente(
         @Param('pacienteId') pacienteId: string,
@@ -82,9 +92,9 @@ export class PacienteEnfermedadController {
         description:
             'Devuelve todos los pacientes que tienen registrada una enfermedad específica',
     })
-    @ApiResponse(SWAGGER_RESPONSES.OK(PacienteEnfermedadEntity))
-    @ApiResponse(SWAGGER_RESPONSES.NOT_FOUND)
-    @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
+    @ApiOkResponse()
+    @ApiNotFoundResponse()
+    @ApiUnauthorizedResponse()
     @HttpCode(HttpStatus.OK)
     findByEnfermedad(
         @Param('enfermedadId') enfermedadId: string,
@@ -99,9 +109,9 @@ export class PacienteEnfermedadController {
         description:
             'Devuelve los detalles de una relación específica entre un paciente y una enfermedad',
     })
-    @ApiResponse(SWAGGER_RESPONSES.OK(PacienteEnfermedadEntity))
-    @ApiResponse(SWAGGER_RESPONSES.NOT_FOUND)
-    @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
+    @ApiOkResponse()
+    @ApiNotFoundResponse()
+    @ApiUnauthorizedResponse()
     @HttpCode(HttpStatus.OK)
     findOne(
         @Param('pacienteId') pacienteId: string,
@@ -120,11 +130,11 @@ export class PacienteEnfermedadController {
         description:
             'Actualiza los detalles de una relación existente entre paciente y enfermedad',
     })
-    @ApiResponse(SWAGGER_RESPONSES.OK(PacienteEnfermedadEntity))
-    @ApiResponse(SWAGGER_RESPONSES.NOT_FOUND)
-    @ApiResponse(SWAGGER_RESPONSES.BAD_REQUEST)
-    @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
-    @ApiResponse(SWAGGER_RESPONSES.FORBIDDEN)
+    @ApiOkResponse()
+    @ApiNotFoundResponse()
+    @ApiBadRequestResponse()
+    @ApiUnauthorizedResponse()
+    @ApiForbiddenResponse()
     @HttpCode(HttpStatus.OK)
     update(
         @Param('pacienteId') pacienteId: string,
@@ -145,10 +155,10 @@ export class PacienteEnfermedadController {
         description:
             'Elimina permanentemente una relación entre paciente y enfermedad del sistema',
     })
-    @ApiResponse({ status: 204, description: 'Recurso eliminado exitosamente' })
-    @ApiResponse(SWAGGER_RESPONSES.NOT_FOUND)
-    @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
-    @ApiResponse(SWAGGER_RESPONSES.FORBIDDEN)
+    @ApiNoContentResponse()
+    @ApiNotFoundResponse()
+    @ApiUnauthorizedResponse()
+    @ApiForbiddenResponse()
     remove(
         @Param('pacienteId') pacienteId: string,
         @Param('enfermedadId') enfermedadId: string,

@@ -23,6 +23,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { MedicosModule } from './medicos/medicos.module';
 import { PacienteEnfermedadModule } from './paciente-enfermedad/paciente-enfermedad.module';
 import { DocumentsModule } from './documents/documents.module';
+import { CommonModule } from './common/common.module';
+import { EspecialidadModule } from './especialidad/especialidad.module';
+import { HorarioModule } from './horario/horario.module';
 
 @Module({
     imports: [
@@ -93,6 +96,9 @@ import { DocumentsModule } from './documents/documents.module';
         MedicosModule,
         PacienteEnfermedadModule,
         DocumentsModule,
+        CommonModule,
+        EspecialidadModule,
+        HorarioModule,
     ],
 })
 export class AppModule {}

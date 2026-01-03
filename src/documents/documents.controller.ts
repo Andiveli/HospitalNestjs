@@ -27,6 +27,7 @@ import {
     ApiOperation,
     ApiParam,
     ApiResponse,
+    ApiQuery,
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -134,6 +135,14 @@ export class DocumentsController {
         summary: 'Obtener documentos por historia clínica',
         description:
             'Retorna todos los documentos de una historia clínica. Usa ?tipo=NombreTipo para filtrar por tipo específico.',
+    })
+    @ApiQuery({
+        name: 'tipo',
+        required: false,
+        description:
+            'Opcional: Filtrar por tipo de documento (ej: Laboratorio, Radiología, Informe Médico)',
+        example: 'Laboratorio',
+        type: String,
     })
     @ApiOkResponse({
         type: [DocumentResponseDto],

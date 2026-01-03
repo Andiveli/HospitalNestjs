@@ -1,3 +1,6 @@
+import { PerfilMedico } from 'src/medicos/dto/addmedico.dto';
+import { MedicosService } from 'src/medicos/medicos.service';
+import { PerfilPaciente } from 'src/pacientes/dto/perfil.dto';
 import { PacientesService } from 'src/pacientes/pacientes.service';
 
 export interface PerfilResponse {
@@ -20,7 +23,7 @@ export class PacientePerfilStrategy extends PerfilStrategy {
         super();
     }
 
-    async obtenerPerfil(userId: number): Promise<any> {
+    async obtenerPerfil(userId: number): Promise<PerfilPaciente | null> {
         try {
             return await this.pacientesService.getInfo(userId);
         } catch (error) {
@@ -31,9 +34,16 @@ export class PacientePerfilStrategy extends PerfilStrategy {
 }
 
 export class MedicoPerfilStrategy extends PerfilStrategy {
-    obtenerPerfil(_userId: number): Promise<any> {
-        //Logica del medico
-        return Promise.resolve(null);
+    constructor(private medicoService: MedicosService) {
+        super();
+    }
+    async obtenerPerfil(userId: number): Promise<PerfilMedico | null> {
+        try {
+            return await this.medicoService.myInfo(userId);
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
     }
 }
 

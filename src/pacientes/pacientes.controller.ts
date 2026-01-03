@@ -14,8 +14,7 @@ import UserRequest from 'src/people/people.request';
 import { InfoDto } from './dto/info.dto';
 import { DocsDto } from './dto/doc.dto';
 import { PacientesEntity } from './pacientes.entity';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { SWAGGER_RESPONSES } from 'src/common/constants/swagger.constants';
+import { ApiBadRequestResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('pacientes')
 export class PacientesController {
@@ -42,10 +41,10 @@ export class PacientesController {
         description:
             'Obtiene la información detallada del paciente que ha iniciado sesión',
     })
-    @ApiResponse(SWAGGER_RESPONSES.OK(PacientesEntity))
-    @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
-    @ApiResponse(SWAGGER_RESPONSES.FORBIDDEN)
-    @ApiResponse(SWAGGER_RESPONSES.NOT_FOUND)
+    @ApiOkResponse({ description: 'Información obtenida correctamente.' })
+    @ApiBadRequestResponse()
+    @ApiForbiddenResponse({ description: 'Acceso denegado.' })
+    @ApiNotFoundResponse({ description: 'Paciente no encontrado' })
     @HttpCode(HttpStatus.OK)
     async getInfo(@Request() req: UserRequest) {
         const result = await this.pacientesService.getInfo(req.user.id);

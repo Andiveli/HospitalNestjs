@@ -9,17 +9,24 @@ import {
     AdminPerfilStrategy,
     PerfilResponse,
 } from './perfil.service';
+import { MedicosService } from 'src/medicos/medicos.service';
 
 @Injectable()
 export class PerfilContext {
     private strategies = new Map<string, PerfilStrategy>();
 
-    constructor(private pacientesService: PacientesService) {
+    constructor(
+        private pacientesService: PacientesService,
+        private medicoServices: MedicosService,
+    ) {
         this.strategies.set(
             Rol.Paciente,
             new PacientePerfilStrategy(this.pacientesService),
         );
-        this.strategies.set(Rol.Medico, new MedicoPerfilStrategy());
+        this.strategies.set(
+            Rol.Medico,
+            new MedicoPerfilStrategy(this.medicoServices),
+        );
         this.strategies.set(Rol.Admin, new AdminPerfilStrategy());
     }
 

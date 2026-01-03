@@ -7,6 +7,7 @@ import { PeopleEntity } from 'src/people/people.entity';
 import { PaisEntity } from 'src/paises/paises.entity';
 import { EstiloVidaEntity } from 'src/estilo-vida/estilo-vida.entity';
 import { GrupoSanguineoEntity } from 'src/sangre/sangre.entity';
+import { CommonModule } from 'src/common/common.module';
 
 @Module({
     imports: [
@@ -17,6 +18,7 @@ import { GrupoSanguineoEntity } from 'src/sangre/sangre.entity';
             EstiloVidaEntity,
             GrupoSanguineoEntity,
         ]),
+        CommonModule,
     ],
     controllers: [PacientesController],
     providers: [PacientesService],

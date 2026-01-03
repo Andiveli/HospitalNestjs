@@ -6,10 +6,12 @@ import {
     ManyToMany,
     JoinTable,
     JoinColumn,
+    OneToOne,
 } from 'typeorm';
 import { RolesEntity } from 'src/roles/roles.entity';
 import { GeneroEntity } from 'src/generos/generos.entity';
 import { EstadoUsuarioEntity } from 'src/estado-vida/estado-vida.entity';
+import { MedicoEntity } from '../medicos/medicos.entity';
 
 @Entity('usuarios')
 export class PeopleEntity {
@@ -81,4 +83,9 @@ export class PeopleEntity {
         inverseJoinColumn: { name: 'rol_id', referencedColumnName: 'id' },
     })
     roles: RolesEntity[];
+
+    @OneToOne(() => MedicoEntity, (medico) => medico.persona, {
+        nullable: true,
+    })
+    medico: MedicoEntity;
 }
