@@ -264,7 +264,7 @@ export class AuthController {
     })
     @ApiBody({
         type: CambiarPassDto,
-        description: 'Contraseña actual y nueva contraseña',
+        description: ' actual y nueva contraseña',
     })
     @ApiOkResponse({
         type: MensajeResponseDto,

@@ -26,7 +26,7 @@ export class MedicosController {
     }
 
     @Roles(Rol.Medico)
-    @Get('myInfo')
+    @Get('myInfoTest')
     @HttpCode(HttpStatus.OK)
     async getMyInfo(@Request() req: UserRequest): Promise<PerfilMedico> {
         return await this.medicosService.myInfo(req.user.id);
