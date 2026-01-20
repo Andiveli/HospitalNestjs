@@ -11,7 +11,7 @@ import { ApiProperty } from '@nestjs/swagger';
  * DTO para registro de nuevos usuarios
  * Contiene toda la información necesaria para crear una cuenta de usuario
  */
-export class SingupDto {
+export class SignupDto {
     @ApiProperty({
         description: 'Cédula del usuario (10 dígitos numéricos)',
         example: '1234567890',
@@ -22,7 +22,7 @@ export class SingupDto {
     @Matches(/^[0-9]{10}$/, {
         message: 'La cédula debe tener 10 dígitos numéricos',
     })
-    cedula: string;
+    cedula!: string;
 
     @ApiProperty({
         description: 'Primer nombre del usuario',
@@ -30,7 +30,7 @@ export class SingupDto {
     })
     @IsString()
     @IsNotEmpty({ message: 'El primer nombre es requerido' })
-    primerNombre: string;
+    primerNombre!: string;
 
     @ApiProperty({
         description: 'Segundo nombre del usuario (opcional)',
@@ -46,7 +46,7 @@ export class SingupDto {
     })
     @IsString()
     @IsNotEmpty({ message: 'El primer apellido es requerido' })
-    primerApellido: string;
+    primerApellido!: string;
 
     @ApiProperty({
         description: 'Segundo apellido del usuario (opcional)',
@@ -64,7 +64,7 @@ export class SingupDto {
     @IsString()
     @IsNotEmpty({ message: 'El email es requerido' })
     @IsEmail({}, { message: 'El email no es valido' })
-    email: string;
+    email!: string;
 
     @ApiProperty({
         description: 'Contraseña del usuario',
@@ -74,7 +74,7 @@ export class SingupDto {
     })
     @IsString()
     @IsNotEmpty({ message: 'El password es requerido' })
-    passwordHash: string;
+    passwordHash!: string;
 
     @ApiProperty({
         description: 'Confirmación de la contraseña',
@@ -83,7 +83,7 @@ export class SingupDto {
     })
     @IsString()
     @IsNotEmpty({ message: 'Debes comprobar tu password' })
-    confirmPassword: string;
+    confirmPassword!: string;
 
     @ApiProperty({
         description: 'ID del género (1: Masculino, 2: Femenino, 3: Otro)',
@@ -92,5 +92,5 @@ export class SingupDto {
     })
     @IsNumber()
     @IsNotEmpty({ message: 'Tu género es requerido' })
-    genero: number;
+    genero!: number;
 }

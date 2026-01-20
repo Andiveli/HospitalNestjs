@@ -14,7 +14,7 @@ export class RestablecerPasswordDto {
     })
     @IsString()
     @IsNotEmpty({ message: 'La nueva contraseña es requerida' })
-    password: string;
+    password!: string;
 
     @ApiProperty({
         description: 'Confirmación de la nueva contraseña',
@@ -23,5 +23,5 @@ export class RestablecerPasswordDto {
     })
     @IsString()
     @IsNotEmpty({ message: 'La confirmación de contraseña es requerida' })
-    confirmPassword: string;
+    confirmPassword!: string;
 }

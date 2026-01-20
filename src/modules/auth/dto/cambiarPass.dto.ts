@@ -13,7 +13,7 @@ export class CambiarPassDto {
     })
     @IsString()
     @IsNotEmpty({ message: 'La contraseña actual es requerida' })
-    passwordActual: string;
+    passwordActual!: string;
 
     @ApiProperty({
         description: 'Nueva contraseña del usuario',
@@ -23,7 +23,7 @@ export class CambiarPassDto {
     })
     @IsString()
     @IsNotEmpty({ message: 'La nueva contraseña es requerida' })
-    newPassword: string;
+    newPassword!: string;
 
     @ApiProperty({
         description: 'Confirmación de la nueva contraseña',
@@ -34,5 +34,5 @@ export class CambiarPassDto {
     @IsNotEmpty({
         message: 'La confirmación de la nueva contraseña es requerida',
     })
-    confirmNewPass: string;
+    confirmNewPass!: string;
 }

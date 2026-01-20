@@ -15,5 +15,5 @@ export class OlvidePasswordDto {
     @IsString()
     @IsEmail({}, { message: 'El email no es valido' })
     @IsNotEmpty({ message: 'El email es requerido' })
-    email: string;
+    email!: string;
 }

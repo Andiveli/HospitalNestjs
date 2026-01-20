@@ -10,56 +10,74 @@
 
 ```
 src/
-├── core/                    # Core infrastructure (auth, config)
-├── shared/                  # Shared utilities, common modules
-├── features/                # Business features
-│   ├── user/
-│   │   ├── dto/
-│   │   │   ├── create-user.dto.ts
-│   │   │   ├── update-user.dto.ts
-│   │   │   └── user-response.dto.ts
-│   │   ├── entities/
-│   │   │   └── user.entity.ts
-│   │   ├── repositories/
-│   │   │   └── user.repository.ts
-│   │   ├── user.controller.ts
-│   │   ├── user.service.ts
-│   │   ├── user.module.ts
-│   │   └── *.spec.ts
-│   ├── patient/
-│   │   ├── dto/
-│   │   ├── entities/
-│   │   ├── repositories/
-│   │   ├── patient.controller.ts
-│   │   ├── patient.service.ts
-│   │   ├── patient.module.ts
-│   │   └── *.spec.ts
-│   └── doctor/
-│       ├── dto/
-│       ├── entities/
-│       ├── repositories/
-│       ├── doctor.controller.ts
-│       ├── doctor.service.ts
-│       ├── doctor.module.ts
-│       └── *.spec.ts
-├── config/
-│   ├── database.config.ts
-│   ├── jwt.config.ts
-│   └── swagger.config.ts
-├── common/
-│   ├── decorators/
-│   │   ├── auth.decorator.ts
-│   │   └── roles.decorator.ts
-│   ├── filters/
-│   │   └── http-exception.filter.ts
-│   ├── guards/
-│   │   ├── auth.guard.ts
-│   │   └── roles.guard.ts
-│   ├── interceptors/
-│   │   └── logging.interceptor.ts
-│   └── pipes/
-│       └── validation.pipe.ts
-└── main.ts
+├─ main.ts
+├─ app.module.ts
+├─ config/
+│  ├─ env.validation.ts
+│  ├─ configuration.ts
+│  └─ database.config.ts
+│
+├─ common/
+│  ├─ decorators/
+│  ├─ filters/            # exception filters
+│  ├─ guards/
+│  ├─ interceptors/
+│  ├─ pipes/
+│  ├─ middleware/
+│  ├─ utils/
+│  └─ constants/
+│
+├─ infrastructure/        # dependencias externas
+│  ├─ database/
+│  │  ├─ prisma/ | typeorm/
+│  │  │  ├─ migrations/
+│  │  │  └─ repositories/
+│  │  └─ database.module.ts
+│  ├─ messaging/          # kafka, rabbitmq, sqs
+│  ├─ cache/              # redis
+│  └─ storage/            # s3, gcs
+│
+├─ modules/               # dominios del negocio
+│  ├─ auth/
+│  │  ├─ auth.controller.ts
+│  │  ├─ auth.service.ts
+│  │  ├─ dto/
+│  │  ├─ strategies/
+│  │  ├─ guards/
+│  │  └─ auth.module.ts
+│  │
+│  ├─ users/
+│  │  ├─ controllers/
+│  │  ├─ services/
+│  │  ├─ dto/
+│  │  ├─ entities/
+│  │  ├─ repositories/
+│  │  └─ users.module.ts
+│  │
+│  ├─ orders/
+│  │  ├─ application/     # casos de uso
+│  │  ├─ domain/          # entidades, value objects
+│  │  ├─ infrastructure/ # repos concretos
+│  │  └─ orders.module.ts
+│  │
+│  └─ ...
+│
+├─ shared/                # reutilizable entre módulos
+│  ├─ dto/
+│  ├─ enums/
+│  ├─ interfaces/
+│  └─ services/
+│
+├─ jobs/                  # cron, workers
+│  └─ cleanup.job.ts
+│
+├─ events/
+│  ├─ listeners/
+│  └─ emitters/
+│
+└─ test/
+   ├─ unit/
+   └─ e2e/
 ```
 
 ### Module Organization Rules
@@ -211,16 +229,16 @@ src/
 
 ```bash
 # Application
-NODE_ENV=development|production|test
+=development|production|test
 PORT=3000
 
 # Database
-DATABASE_TYPE=postgres|mysql|mariadb
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_USERNAME=hospital_user
-DATABASE_PASSWORD=hospital_password
-DATABASE_NAME=hospital_db
+DB_TYPE=postgres|mysql|mariadb
+DB_HOST=localhost 
+DB_PORT=5432
+DB_USER=hospital_user
+DB_PASS=hospital_password
+DB_NAME=hospital_db
 
 # Authentication
 JWT_SECRET=your-super-secret-jwt-key
@@ -231,7 +249,7 @@ REFRESH_TOKEN_SECRET=your-refresh-token-secret
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=hospital@example.com
-EMAIL_PASSWORD=email-password
+EMAIL_PASS=email-password
 
 # File Upload (Medical documents, images)
 UPLOAD_PATH=./uploads

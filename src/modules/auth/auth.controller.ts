@@ -33,9 +33,9 @@ import { CambiarPassDto } from './dto/cambiarPass.dto';
 import { LoginDto } from './dto/login.dto';
 import { OlvidePasswordDto } from './dto/olvidePassword.dto';
 import { RestablecerPasswordDto } from './dto/restablecerPassword.dto';
-import { SingupDto } from './dto/signup.dto';
-import { LocalAuthGuard } from './local.guard';
-import { Public } from './public.decorator';
+import { SignupDto } from './dto/signup.dto';
+import { LocalAuthGuard } from './guards/local.guard';
+import { Public } from 'src/common/decorators/public.decorator';
 
 /**
  * Controlador de autenticación
@@ -61,7 +61,7 @@ export class AuthController {
             'Crea una nueva cuenta de usuario en el sistema y envía email de confirmación',
     })
     @ApiBody({
-        type: SingupDto,
+        type: SignupDto,
         description: 'Datos del nuevo usuario a registrar',
     })
     @ApiCreatedResponse({
@@ -70,7 +70,7 @@ export class AuthController {
     })
     @ApiBadRequestResponse({ description: 'Datos inválidos o faltantes' })
     @ApiConflictResponse({ description: 'El email ya está registrado' })
-    async signUp(@Body() body: SingupDto): Promise<{ msg: string }> {
+    async signUp(@Body() body: SignupDto): Promise<{ message: string }> {
         await this.authService.noExisteEmail(body.email);
         this.authService.compararPassword(
             body.passwordHash,
@@ -81,7 +81,7 @@ export class AuthController {
             ...rest,
             genero: await this.authService.getGeneroById(genero),
         });
-        return { msg: 'Usuario registrado correctamente' };
+        return { message: 'Usuario registrado correctamente' };
     }
 
     /**
@@ -110,14 +110,14 @@ export class AuthController {
     @ApiUnprocessableEntityResponse({ description: 'Token expirado' })
     async confirmarUsuario(
         @Param('token') token: string,
-    ): Promise<{ msg: string }> {
+    ): Promise<{ message: string }> {
         const usuarioConfirmar = await this.authService.confirmarUsuario(token);
         this.authService.validarTokenExpiracion(usuarioConfirmar);
         usuarioConfirmar.token = null;
         usuarioConfirmar.tokenExpiracion = null;
         usuarioConfirmar.verificado = true;
         await this.authService.guardar(usuarioConfirmar);
-        return { msg: 'Usuario confirmado correctamente' };
+        return { message: 'Usuario confirmado correctamente' };
     }
 
     /**
@@ -144,7 +144,10 @@ export class AuthController {
     })
     @ApiUnauthorizedResponse({ description: 'Credenciales inválidas' })
     async auth(@Request() req: UserRequest, @Body() _loginData: LoginDto) {
-        return { token: await this.authService.generarJWT(req.user.email) };
+        return {
+            message: 'Login exitoso',
+            data: { token: await this.authService.generarJWT(req.user.email) },
+        };
     }
 
     /**
@@ -171,11 +174,12 @@ export class AuthController {
     @ApiNotFoundResponse({ description: 'Email no encontrado en el sistema' })
     async olvidePassword(
         @Body() body: OlvidePasswordDto,
-    ): Promise<{ msg: string }> {
+    ): Promise<{ message: string }> {
         const usuario = await this.authService.getByEmail(body.email);
         await this.authService.guardar(usuario, true);
         return {
-            msg: 'Se ha enviado un correo con las instrucciones para restablecer la contraseña',
+            message:
+                'Se ha enviado un correo con las instrucciones para restablecer la contraseña',
         };
     }
 
@@ -205,9 +209,9 @@ export class AuthController {
     @ApiUnprocessableEntityResponse({ description: 'Token expirado' })
     async comprobarToken(
         @Param('token') token: string,
-    ): Promise<{ msg: string }> {
+    ): Promise<{ message: string }> {
         await this.authService.confirmarUsuario(token);
-        return { msg: 'Coloca tu nueva contraseña' };
+        return { message: 'Coloca tu nueva contraseña' };
     }
 
     /**
@@ -245,7 +249,7 @@ export class AuthController {
     async restablecer(
         @Param('token') token: string,
         @Body() body: RestablecerPasswordDto,
-    ): Promise<{ msg: string }> {
+    ): Promise<{ message: string }> {
         const usuario = await this.authService.confirmarUsuario(token);
         this.authService.validarTokenExpiracion(usuario);
         this.authService.compararPassword(body.password, body.confirmPassword);
@@ -253,7 +257,7 @@ export class AuthController {
         usuario.token = '';
         usuario.tokenExpiracion = null;
         await this.authService.guardar(usuario);
-        return { msg: 'Contraseña reestablecida correctamente' };
+        return { message: 'Contraseña reestablecida correctamente' };
     }
 
     @Post('cambiarPass')
@@ -277,7 +281,7 @@ export class AuthController {
     async cambiarPass(
         @Request() req: UserRequest,
         @Body() body: CambiarPassDto,
-    ) {
+    ): Promise<{ message: string }> {
         const { passwordActual, newPassword, confirmNewPass } = body;
         const user = await this.authService.validarUser(
             req.user.email,
@@ -286,7 +290,7 @@ export class AuthController {
         this.authService.compararPassword(newPassword, confirmNewPass);
         user.passwordHash = await this.authService.hashPass(newPassword);
         await this.authService.guardar(user);
-        return { msg: 'Contraseña cambiada correctamente' };
+        return { message: 'Contraseña cambiada correctamente' };
     }
 
     @Get('perfil')
@@ -304,6 +308,9 @@ export class AuthController {
         description: 'No autorizado - token inválido o ausente',
     })
     async getMiPerfil(@Request() req: UserRequest) {
-        return await this.authService.obtenerPerfilesCompletos(req.user.email);
+        const perfil = await this.authService.obtenerPerfilesCompletos(
+            req.user.email,
+        );
+        return { message: 'Perfil obtenido correctamente', data: perfil };
     }
 }
