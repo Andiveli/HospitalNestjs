@@ -25,33 +25,33 @@ export enum EstiloVida {
 export class InfoDto {
     @IsDateString({}, { message: 'Formato de fecha incorrecto (YYYY-MM-DD' })
     @IsNotEmpty({ message: 'Tienes que agregar tu fecha de nacimiento' })
-    fecha: string;
+    fecha!: string;
 
     @IsString()
     @IsNotEmpty({ message: 'Tienes que agregar tu numero de telefono' })
     @Matches(/^\+?[0-9]{10}$/, {
         message: 'El numero de telefono no es valido',
     })
-    telefono: string;
+    telefono!: string;
 
     @IsString()
     @IsNotEmpty({ message: 'Tienes que agregar tu direccion' })
-    residencia: string;
+    residencia!: string;
 
     @IsString()
     @IsNotEmpty({ message: 'Tienes que agregar tu pais' })
-    pais: string;
+    pais!: string;
 
     @IsEnum(Sangre, {
         message:
             'Grupo sanguíneo no válido. Opciones: A+, A-, B+, B-, AB+, AB-, O+, O-',
     })
     @IsNotEmpty({ message: 'Tienes que agregar tu grupo sanguineo' })
-    sangre: Sangre;
+    sangre!: Sangre;
 
     @IsEnum(EstiloVida, {
         message: 'Estilo de vida no válido. Opciones: Activo, Sedentario',
     })
     @IsNotEmpty({ message: 'Tienes que agregar tu estilo de vida' })
-    estiloVida: EstiloVida;
+    estiloVida!: EstiloVida;
 }

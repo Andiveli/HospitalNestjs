@@ -5,19 +5,19 @@ import { EspecialidadEntity } from './especialidad.entity';
 @Entity('medicos_especialidades')
 export class MedicoEspecialidadEntity {
     @PrimaryColumn({ name: 'medico_id' })
-    medicoId: number;
+    medicoId!: number;
 
     @PrimaryColumn({ name: 'especialidad_id' })
-    especialidadId: number;
+    especialidadId!: number;
 
     @Column({ name: 'principal', type: 'boolean', default: false })
-    principal: boolean;
+    principal!: boolean;
 
     @ManyToOne(() => MedicoEntity)
     @JoinColumn({ name: 'medico_id', referencedColumnName: 'usuarioId' })
-    medico: MedicoEntity;
+    medico!: MedicoEntity;
 
     @ManyToOne(() => EspecialidadEntity)
     @JoinColumn({ name: 'especialidad_id', referencedColumnName: 'id' })
-    especialidad: EspecialidadEntity;
+    especialidad!: EspecialidadEntity;
 }

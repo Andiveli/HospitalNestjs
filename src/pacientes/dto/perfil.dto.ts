@@ -1,20 +1,13 @@
-// import { ApiProperty } from '@nestjs/swagger';
-//
-// export class PerfilPacienteEnfermedadDto {
-//     @ApiProperty({ description: 'ID de la enfermedad' })
-//     id: number;
-//
-//     @ApiProperty({ description: 'Nombre de la enfermedad' })
-//     nombre: string;
-//
-//     @ApiProperty({ description: 'Tipo de enfermedad (formateado)' })
-//     tipo: string;
-//
-//     @ApiProperty({
-//         description: 'Detalles adicionales de la enfermedad',
-//         required: false,
-//     })
-//     detalle?: string;
-// }
-//
-export class PerfilPaciente {}
+export interface PerfilPaciente {
+    nombres: string;
+    edad: number;
+    email: string;
+    telefono: string;
+    pais: string;
+    genero: string;
+    residencia: string;
+    sangre: string;
+    estilo: string;
+    imagen?: string;
+    enfermedades: Record<string, string>;
+}

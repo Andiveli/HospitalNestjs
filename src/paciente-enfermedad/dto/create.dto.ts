@@ -10,11 +10,11 @@ import {
 export class CreatePacienteEnfermedadDto {
     @IsInt()
     @Min(1)
-    pacienteId: number;
+    pacienteId!: number;
 
     @IsInt()
     @Min(1)
-    enfermedadId: number;
+    enfermedadId!: number;
 
     @IsString()
     @IsOptional()
@@ -24,5 +24,5 @@ export class CreatePacienteEnfermedadDto {
     @IsInt()
     @Min(1)
     @IsNotEmpty()
-    tipoEnfermedadId: number;
+    tipoEnfermedadId!: number;
 }

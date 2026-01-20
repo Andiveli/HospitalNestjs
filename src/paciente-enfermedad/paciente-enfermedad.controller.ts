@@ -19,7 +19,6 @@ import {
     ApiNotFoundResponse,
     ApiOkResponse,
     ApiOperation,
-    ApiResponse,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Roles } from 'src/roles/roles.decorator';

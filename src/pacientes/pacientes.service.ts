@@ -103,13 +103,16 @@ export class PacientesService {
 
     private formatearSick(pacienteEnfermedades: PacienteEnfermedadEntity[]) {
         return (
-            pacienteEnfermedades?.reduce((acc, relacion) => {
-                if (relacion.enfermedad && relacion.tipoEnfermedad) {
-                    acc[relacion.enfermedad.nombre] =
-                        relacion.tipoEnfermedad.nombre;
-                }
-                return acc;
-            }, {}) || {}
+            pacienteEnfermedades?.reduce(
+                (acc: Record<string, string>, relacion) => {
+                    if (relacion.enfermedad && relacion.tipoEnfermedad) {
+                        acc[relacion.enfermedad.nombre] =
+                            relacion.tipoEnfermedad.nombre;
+                    }
+                    return acc;
+                },
+                {},
+            ) || {}
         );
     }
 }

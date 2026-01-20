@@ -10,14 +10,14 @@ export class UploadDocumentDto {
     @IsString()
     @IsNotEmpty({ message: 'El título es requerido' })
     @MaxLength(150, { message: 'El título no puede exceder 150 caracteres' })
-    titulo: string;
+    titulo!: string;
 
     @ApiProperty({
         description: 'Tipo de documento (nombre)',
         example: '1. Lab, 2. Imagenes, 3. Informes',
     })
     @IsNotEmpty({ message: 'El tipo de documento es requerido' })
-    tipo: number;
+    tipo!: number;
 }
 
 // DTO específico para Swagger en el upload
@@ -27,14 +27,14 @@ export class UploadDocumentWithFileDto {
         format: 'binary',
         description: 'Archivo (PDF, JPEG, PNG, GIF, WebP - max 10MB)',
     })
-    file: Express.Multer.File;
+    file!: Express.Multer.File;
 
     @ApiProperty({
         description: 'Título del documento',
         example: 'Radiografía de tórax',
         maxLength: 150,
     })
-    titulo: string;
+    titulo!: string;
 }
 
 export class DocumentResponseDto {
@@ -42,25 +42,25 @@ export class DocumentResponseDto {
         description: 'ID del documento',
         example: 1,
     })
-    id: number;
+    id!: number;
 
     @ApiProperty({
         description: 'Título del documento',
         example: 'Radiografía de tórax',
     })
-    titulo: string;
+    titulo!: string;
 
     @ApiProperty({
         description: 'Tipo MIME del documento',
         example: 'application/pdf',
     })
-    mimeType: string;
+    mimeType!: string;
 
     @ApiProperty({
         description: 'Fecha y hora de subida',
         example: '2023-01-15T10:30:00Z',
     })
-    fechaHoraSubida: Date;
+    fechaHoraSubida!: Date;
 }
 
 export class GetDownloadUrlDto {
@@ -69,13 +69,13 @@ export class GetDownloadUrlDto {
         example:
             'https://bucket.s3.amazonaws.com/documentos/123/file.pdf?X-Amz-Expires=3600...',
     })
-    downloadUrl: string;
+    downloadUrl!: string;
 
     @ApiProperty({
         description: 'Tiempo de expiración de la URL (en segundos)',
         example: 3600,
     })
-    expiresIn: number;
+    expiresIn!: number;
 }
 
 // DTOs para respuestas de error
@@ -85,19 +85,19 @@ export class BadRequestErrorResponseDto {
         example:
             'Tipo de archivo no permitido. Tipos permitidos: application/pdf, image/jpeg, image/png, image/gif, image/webp',
     })
-    message: string;
+    message!: string;
 
     @ApiProperty({
         description: 'Código de error HTTP',
         example: 400,
     })
-    statusCode: number;
+    statusCode!: number;
 
     @ApiProperty({
         description: 'Tipo de error',
         example: 'Bad Request',
     })
-    error: string;
+    error!: string;
 }
 
 export class NotFoundErrorResponseDto {
@@ -105,19 +105,19 @@ export class NotFoundErrorResponseDto {
         description: 'Mensaje de error',
         example: 'Documento no encontrado',
     })
-    message: string;
+    message!: string;
 
     @ApiProperty({
         description: 'Código de error HTTP',
         example: 404,
     })
-    statusCode: number;
+    statusCode!: number;
 
     @ApiProperty({
         description: 'Tipo de error',
         example: 'Not Found',
     })
-    error: string;
+    error!: string;
 }
 
 export class InternalServerErrorResponseDto {
@@ -126,19 +126,19 @@ export class InternalServerErrorResponseDto {
         example:
             'Error uploading file to S3: The specified bucket does not exist',
     })
-    message: string;
+    message!: string;
 
     @ApiProperty({
         description: 'Código de error HTTP',
         example: 500,
     })
-    statusCode: number;
+    statusCode!: number;
 
     @ApiProperty({
         description: 'Tipo de error',
         example: 'Internal Server Error',
     })
-    error: string;
+    error!: string;
 }
 
 export class UnauthorizedErrorResponseDto {
@@ -146,17 +146,17 @@ export class UnauthorizedErrorResponseDto {
         description: 'Mensaje de error',
         example: 'Unauthorized',
     })
-    message: string;
+    message!: string;
 
     @ApiProperty({
         description: 'Código de error HTTP',
         example: 401,
     })
-    statusCode: number;
+    statusCode!: number;
 
     @ApiProperty({
         description: 'Tipo de error',
         example: 'Unauthorized',
     })
-    error: string;
+    error!: string;
 }

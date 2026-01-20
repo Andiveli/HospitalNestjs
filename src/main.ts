@@ -30,7 +30,7 @@ async function bootstrap() {
             process.env.NODE_ENV === 'production' &&
             process.env.SWAGGER_TOKEN
         ) {
-            app.use('/api', (req, res, next) => {
+            app.use('/api', (req: any, res: any, next: any) => {
                 const authHeader = req.headers.authorization;
                 if (
                     !authHeader ||

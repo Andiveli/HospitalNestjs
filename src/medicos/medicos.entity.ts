@@ -17,17 +17,22 @@ import { ExcepcionHorarioEntity } from '../horario/excepcion-horario.entity';
 @Entity('medicos')
 export class MedicoEntity {
     @PrimaryColumn({ name: 'usuario_id' })
-    usuarioId: number;
+    usuarioId!: number;
 
-    @Column({ name: 'pasaporte', unique: true, length: 15, nullable: true })
-    pasaporte: string;
+    @Column('varchar', {
+        name: 'pasaporte',
+        unique: true,
+        length: 15,
+        nullable: true,
+    })
+    pasaporte!: string | null;
 
     @Column({ name: 'licencia_medica', length: 50, nullable: true })
-    licenciaMedica: string;
+    licenciaMedica!: string;
 
     @OneToOne(() => PeopleEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'usuario_id', referencedColumnName: 'id' })
-    persona: PeopleEntity;
+    persona!: PeopleEntity;
 
     @ManyToMany(
         () => EspecialidadEntity,
@@ -42,17 +47,17 @@ export class MedicoEntity {
             referencedColumnName: 'id',
         },
     })
-    especialidades: EspecialidadEntity[];
+    especialidades!: EspecialidadEntity[];
 
     @OneToMany(
         () => MedicoEspecialidadEntity,
         (medicoEspecialidad) => medicoEspecialidad.medico,
     )
-    medicoEspecialidades: MedicoEspecialidadEntity[];
+    medicoEspecialidades!: MedicoEspecialidadEntity[];
 
     @OneToMany(() => HorarioMedicoEntity, (horario) => horario.medico)
-    horarios: HorarioMedicoEntity[];
+    horarios!: HorarioMedicoEntity[];
 
     @OneToMany(() => ExcepcionHorarioEntity, (excepcion) => excepcion.medico)
-    excepcionesHorario: ExcepcionHorarioEntity[];
+    excepcionesHorario!: ExcepcionHorarioEntity[];
 }

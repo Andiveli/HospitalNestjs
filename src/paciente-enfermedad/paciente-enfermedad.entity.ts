@@ -6,16 +6,16 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 @Entity('pacientes_enfermedades')
 export class PacienteEnfermedadEntity {
     @PrimaryColumn({ name: 'paciente_id' })
-    pacienteId: number;
+    pacienteId!: number;
 
     @PrimaryColumn({ name: 'enfermedad_id' })
-    enfermedadId: number;
+    enfermedadId!: number;
 
     @Column('text', { nullable: true })
-    detalle: string;
+    detalle!: string;
 
     @PrimaryColumn({ name: 'tipo_enfermedad_id' })
-    tipoEnfermedadId: number;
+    tipoEnfermedadId!: number;
 
     // Relaciones
     @ManyToOne(
@@ -23,16 +23,16 @@ export class PacienteEnfermedadEntity {
         (paciente) => paciente.pacienteEnfermedades,
     )
     @JoinColumn({ name: 'paciente_id' })
-    paciente: PacientesEntity;
+    paciente!: PacientesEntity;
 
     @ManyToOne(
         () => EnfermedadesEntity,
         (enfermedad) => enfermedad.pacienteEnfermedades,
     )
     @JoinColumn({ name: 'enfermedad_id' })
-    enfermedad: EnfermedadesEntity;
+    enfermedad!: EnfermedadesEntity;
 
     @ManyToOne(() => TiposEnfermedadEntity)
     @JoinColumn({ name: 'tipo_enfermedad_id' })
-    tipoEnfermedad: TiposEnfermedadEntity;
+    tipoEnfermedad!: TiposEnfermedadEntity;
 }

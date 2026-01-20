@@ -1,5 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import { PacientesService } from 'src/pacientes/pacientes.service';
+import { Injectable, Logger } from '@nestjs/common';
 import { PeopleEntity } from 'src/people/people.entity';
 import { Rol } from 'src/roles/roles.enum';
 import {
@@ -9,25 +8,20 @@ import {
     AdminPerfilStrategy,
     PerfilResponse,
 } from './perfil.service';
-import { MedicosService } from 'src/medicos/medicos.service';
 
 @Injectable()
 export class PerfilContext {
+    private readonly logger = new Logger(PerfilContext.name);
     private strategies = new Map<string, PerfilStrategy>();
 
     constructor(
-        private pacientesService: PacientesService,
-        private medicoServices: MedicosService,
+        private pacienteStrategy: PacientePerfilStrategy,
+        private medicoStrategy: MedicoPerfilStrategy,
+        private adminStrategy: AdminPerfilStrategy,
     ) {
-        this.strategies.set(
-            Rol.Paciente,
-            new PacientePerfilStrategy(this.pacientesService),
-        );
-        this.strategies.set(
-            Rol.Medico,
-            new MedicoPerfilStrategy(this.medicoServices),
-        );
-        this.strategies.set(Rol.Admin, new AdminPerfilStrategy());
+        this.strategies.set(Rol.Paciente, this.pacienteStrategy);
+        this.strategies.set(Rol.Medico, this.medicoStrategy);
+        this.strategies.set(Rol.Admin, this.adminStrategy);
     }
 
     async obtenerPerfilesCompletos(
@@ -39,9 +33,16 @@ export class PerfilContext {
         for (const rol of roles) {
             const strategy = this.strategies.get(rol);
             if (strategy) {
-                const perfilData = await strategy.obtenerPerfil(usuario.id);
-                if (perfilData) {
-                    perfiles[rol] = perfilData;
+                try {
+                    const perfilData = await strategy.obtenerPerfil(usuario.id);
+                    if (perfilData) {
+                        perfiles[rol] = perfilData;
+                    }
+                } catch (error) {
+                    this.logger.error(
+                        `Error obteniendo perfil para rol ${rol}, userId ${usuario.id}`,
+                        error,
+                    );
                 }
             }
         }

@@ -4,17 +4,17 @@ import { PacienteEnfermedadEntity } from 'src/paciente-enfermedad/paciente-enfer
 @Entity('enfermedades')
 export class EnfermedadesEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column('varchar', { length: 150, name: 'nombre' })
-    nombre: string;
+    nombre!: string;
 
     @Column('varchar', { length: 255, nullable: true, name: 'descripcion' })
-    descripcion: string;
+    descripcion!: string;
 
     @OneToMany(
         () => PacienteEnfermedadEntity,
         (pacienteEnfermedad) => pacienteEnfermedad.enfermedad,
     )
-    pacienteEnfermedades: PacienteEnfermedadEntity[];
+    pacienteEnfermedades!: PacienteEnfermedadEntity[];
 }

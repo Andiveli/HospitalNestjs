@@ -10,21 +10,21 @@ import { MedicoEntity } from '../medicos/medicos.entity';
 @Entity('excepcion_horario')
 export class ExcepcionHorarioEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({ name: 'fecha', type: 'date' })
-    fecha: Date;
+    fecha!: Date;
 
     @Column({ name: 'hora_inicio', type: 'time', nullable: true })
-    horaInicio: string;
+    horaInicio!: string;
 
     @Column({ name: 'hora_fin', type: 'time', nullable: true })
-    horaFin: string;
+    horaFin!: string;
 
     @Column({ name: 'motivo', length: 255, nullable: true })
-    motivo: string;
+    motivo!: string;
 
     @ManyToOne(() => MedicoEntity)
     @JoinColumn({ name: 'medico_id', referencedColumnName: 'usuarioId' })
-    medico: MedicoEntity;
+    medico!: MedicoEntity;
 }

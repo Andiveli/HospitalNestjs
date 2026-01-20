@@ -16,38 +16,38 @@ import { MedicoEntity } from '../medicos/medicos.entity';
 @Entity('usuarios')
 export class PeopleEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column('char', { unique: true, length: 10, name: 'cedula' })
-    cedula: string;
+    cedula!: string;
 
     @Column('varchar', { length: 100, name: 'primer_nombre' })
-    primerNombre: string;
+    primerNombre!: string;
 
     @Column('varchar', { length: 100, nullable: true, name: 'segundo_nombre' })
-    segundoNombre: string;
+    segundoNombre!: string;
 
     @Column('varchar', { length: 100, name: 'primer_apellido' })
-    primerApellido: string;
+    primerApellido!: string;
 
     @Column('varchar', {
         length: 100,
         nullable: true,
         name: 'segundo_apellido',
     })
-    segundoApellido: string;
+    segundoApellido!: string;
 
     @Column('varchar', { unique: true, length: 255, name: 'email' })
-    email: string;
+    email!: string;
 
     @Column('varchar', { length: 255, name: 'password_hash' })
-    passwordHash: string;
+    passwordHash!: string;
 
     @Column('timestamp', { name: 'fecha_creacion' })
-    fechaCreacion: Date;
+    fechaCreacion!: Date;
 
     @Column('boolean', { default: false, name: 'verificado' })
-    verificado: boolean;
+    verificado!: boolean;
 
     @Column('varchar', {
         default: '',
@@ -55,7 +55,7 @@ export class PeopleEntity {
         nullable: true,
         name: 'image_url',
     })
-    imageUrl: string;
+    imageUrl!: string;
 
     @Column('varchar', {
         length: 255,
@@ -63,18 +63,18 @@ export class PeopleEntity {
         unique: true,
         name: 'token',
     })
-    token: string | null;
+    token!: string | null;
 
     @Column('timestamp', { nullable: true, name: 'token_expiracion' })
-    tokenExpiracion: Date | null;
+    tokenExpiracion!: Date | null;
 
     @ManyToOne(() => GeneroEntity)
     @JoinColumn({ name: 'genero_id' })
-    genero: GeneroEntity;
+    genero!: GeneroEntity;
 
     @ManyToOne(() => EstadoUsuarioEntity)
     @JoinColumn({ name: 'estado_id' })
-    estado: EstadoUsuarioEntity;
+    estado!: EstadoUsuarioEntity;
 
     @ManyToMany(() => RolesEntity, (rol) => rol.usuarios)
     @JoinTable({
@@ -82,10 +82,10 @@ export class PeopleEntity {
         joinColumn: { name: 'usuario_id', referencedColumnName: 'id' },
         inverseJoinColumn: { name: 'rol_id', referencedColumnName: 'id' },
     })
-    roles: RolesEntity[];
+    roles!: RolesEntity[];
 
     @OneToOne(() => MedicoEntity, (medico) => medico.persona, {
         nullable: true,
     })
-    medico: MedicoEntity;
+    medico!: MedicoEntity;
 }

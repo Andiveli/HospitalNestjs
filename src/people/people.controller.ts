@@ -7,7 +7,7 @@ import {
     Post,
     UseGuards,
 } from '@nestjs/common';
-import { Public } from 'src/auth/public.decorator';
+// import { Public } from 'src/auth/public.decorator';
 import { CrearDto } from './dto/crear.dto';
 import { PeopleService } from './people.service';
 import { PeopleGuard } from './people.guard';

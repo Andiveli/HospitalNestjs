@@ -7,16 +7,19 @@ import {
 } from 'typeorm';
 import { MedicoEntity } from '../medicos/medicos.entity';
 
+/**
+ * Entidad que representa una especialidad médica
+ */
 @Entity('especialidades')
 export class EspecialidadEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({ name: 'nombre', length: 100 })
-    nombre: string;
+    nombre!: string;
 
     @Column({ name: 'descripcion', length: 255, nullable: true })
-    descripcion: string;
+    descripcion!: string;
 
     @ManyToMany(() => MedicoEntity, (medico) => medico.especialidades)
     @JoinTable({
@@ -27,5 +30,5 @@ export class EspecialidadEntity {
             referencedColumnName: 'usuarioId',
         },
     })
-    medicos: MedicoEntity[];
+    medicos!: MedicoEntity[];
 }

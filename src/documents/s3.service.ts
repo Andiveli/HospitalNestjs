@@ -44,7 +44,9 @@ export class S3Service {
         try {
             await this.s3Client.send(new PutObjectCommand(uploadParams));
         } catch (error) {
-            throw new Error(`Error uploading file to S3: ${error.message}`);
+            throw new Error(
+                `Error uploading file to S3: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            );
         }
     }
 
@@ -72,7 +74,9 @@ export class S3Service {
                 { expiresIn },
             );
         } catch (error) {
-            throw new Error(`Error generating signed URL: ${error.message}`);
+            throw new Error(
+                `Error generating signed URL: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            );
         }
     }
 
@@ -89,7 +93,9 @@ export class S3Service {
         try {
             await this.s3Client.send(new DeleteObjectCommand(deleteParams));
         } catch (error) {
-            throw new Error(`Error deleting file from S3: ${error.message}`);
+            throw new Error(
+                `Error deleting file from S3: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            );
         }
     }
 

@@ -9,11 +9,11 @@ import { DocumentsEntity } from 'src/documents/documents.entity';
 @Entity('historias_clinicas')
 export class HistoriaClinicaEntity {
     @PrimaryGeneratedColumn({ name: 'paciente_id' })
-    pacienteId: number;
+    pacienteId!: number;
 
     @Column({ type: 'timestamp', name: 'fecha_hora_apertura' })
-    fechaHoraApertura: Date;
+    fechaHoraApertura!: Date;
 
     @OneToMany(() => DocumentsEntity, (documento) => documento.historia)
-    documentos: DocumentsEntity[];
+    documentos!: DocumentsEntity[];
 }

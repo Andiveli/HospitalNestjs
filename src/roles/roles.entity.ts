@@ -11,16 +11,16 @@ import { PermisosEntity } from 'src/permisos/permisos.entity';
 @Entity('roles')
 export class RolesEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column('varchar', { length: 100, unique: true, name: 'nombre' })
-    nombre: string;
+    nombre!: string;
 
     @Column('varchar', { length: 255, nullable: true, name: 'descripcion' })
-    descripcion: string;
+    descripcion!: string;
 
     @ManyToMany(() => PeopleEntity, (person) => person.roles)
-    usuarios: PeopleEntity[];
+    usuarios!: PeopleEntity[];
 
     @ManyToMany(() => PermisosEntity, (permiso) => permiso.roles)
     @JoinTable({
@@ -28,5 +28,5 @@ export class RolesEntity {
         joinColumn: { name: 'rol_id', referencedColumnName: 'id' },
         inverseJoinColumn: { name: 'permiso_id', referencedColumnName: 'id' },
     })
-    permisos: PermisosEntity[];
+    permisos!: PermisosEntity[];
 }

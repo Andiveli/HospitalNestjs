@@ -16,40 +16,40 @@ import {
 @Entity('pacientes')
 export class PacientesEntity {
     @PrimaryGeneratedColumn({ name: 'usuario_id' })
-    usuarioId: number;
+    usuarioId!: number;
 
     @OneToOne(() => PeopleEntity)
     @JoinColumn({ name: 'usuario_id' })
-    person: PeopleEntity;
+    person!: PeopleEntity;
 
     @Column('date', { name: 'fecha_nacimiento' })
-    fechaNacimiento: Date;
+    fechaNacimiento!: Date;
 
     @ManyToOne(() => PaisEntity, { nullable: false })
     @JoinColumn({ name: 'pais_id' })
-    pais: PaisEntity;
+    pais!: PaisEntity;
 
     @Column('varchar', {
         length: 150,
         nullable: true,
         name: 'lugar_residencia',
     })
-    lugarResidencia: string;
+    lugarResidencia!: string;
 
     @Column('char', { length: 10, nullable: true, name: 'numero_celular' })
-    numeroCelular: string;
+    numeroCelular!: string;
 
     @ManyToOne(() => GrupoSanguineoEntity, { nullable: false })
     @JoinColumn({ name: 'grupo_sanguineo_id' })
-    grupoSanguineo: GrupoSanguineoEntity;
+    grupoSanguineo!: GrupoSanguineoEntity;
 
     @ManyToOne(() => EstiloVidaEntity, { nullable: false })
     @JoinColumn({ name: 'estilo_vida_id' })
-    estiloVida: EstiloVidaEntity;
+    estiloVida!: EstiloVidaEntity;
 
     @OneToMany(
         () => PacienteEnfermedadEntity,
         (pacienteEnfermedad) => pacienteEnfermedad.paciente,
     )
-    pacienteEnfermedades: PacienteEnfermedadEntity[];
+    pacienteEnfermedades!: PacienteEnfermedadEntity[];
 }

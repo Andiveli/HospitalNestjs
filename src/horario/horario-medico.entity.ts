@@ -11,19 +11,19 @@ import { DiaAtencionEntity } from './dia-atencion.entity';
 @Entity('horarios_medico')
 export class HorarioMedicoEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({ name: 'hora_inicio', type: 'time' })
-    horaInicio: string;
+    horaInicio!: string;
 
     @Column({ name: 'hora_fin', type: 'time' })
-    horaFin: string;
+    horaFin!: string;
 
     @ManyToOne(() => DiaAtencionEntity)
     @JoinColumn({ name: 'dia_id' })
-    dia: DiaAtencionEntity;
+    dia!: DiaAtencionEntity;
 
     @ManyToOne(() => MedicoEntity)
     @JoinColumn({ name: 'medico_id', referencedColumnName: 'usuarioId' })
-    medico: MedicoEntity;
+    medico!: MedicoEntity;
 }

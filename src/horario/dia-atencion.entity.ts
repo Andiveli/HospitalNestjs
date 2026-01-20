@@ -4,11 +4,11 @@ import { HorarioMedicoEntity } from './horario-medico.entity';
 @Entity('dias_atencion')
 export class DiaAtencionEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({ name: 'nombre', length: 50 })
-    nombre: string;
+    nombre!: string;
 
     @OneToMany(() => HorarioMedicoEntity, (horario) => horario.dia)
-    horarios: HorarioMedicoEntity[];
+    horarios!: HorarioMedicoEntity[];
 }

@@ -1,16 +1,12 @@
-# Code Review Rules - NestJS + TypeScript
+# Hospital NestJS - Project Specific Standards
 
-## 1. General Principles
+## Available Skills
 
-- **Use TypeScript strict mode** - No compromises
-- **Prefer composition over inheritance**
-- **Keep modules small and cohesive** - One module = one responsibility
-- **Avoid business logic in controllers**
-- **Single Responsibility Principle** everywhere
-- **No circular dependencies** - Use `nest graph` to detect
-- **Follow SOLID principles religiously**
+| Skill Name  | Description                                                                          | Documentation                      |
+| ----------- | ------------------------------------------------------------------------------------ | ---------------------------------- |
+| `AGENTS.md` | NestJS + TypeScript enterprise patterns with strict type safety and SOLID principles | [SKILL.md](skills/nestjs/SKILL.md) |
 
-## 2. Project Structure
+## 1. Project Structure (Hospital Specific)
 
 ```
 src/
@@ -19,563 +15,298 @@ src/
 ├── features/                # Business features
 │   ├── user/
 │   │   ├── dto/
+│   │   │   ├── create-user.dto.ts
+│   │   │   ├── update-user.dto.ts
+│   │   │   └── user-response.dto.ts
 │   │   ├── entities/
+│   │   │   └── user.entity.ts
 │   │   ├── repositories/
+│   │   │   └── user.repository.ts
 │   │   ├── user.controller.ts
 │   │   ├── user.service.ts
 │   │   ├── user.module.ts
 │   │   └── *.spec.ts
-│   └── patient/
+│   ├── patient/
+│   │   ├── dto/
+│   │   ├── entities/
+│   │   ├── repositories/
+│   │   ├── patient.controller.ts
+│   │   ├── patient.service.ts
+│   │   ├── patient.module.ts
+│   │   └── *.spec.ts
+│   └── doctor/
+│       ├── dto/
+│       ├── entities/
+│       ├── repositories/
+│       ├── doctor.controller.ts
+│       ├── doctor.service.ts
+│       ├── doctor.module.ts
+│       └── *.spec.ts
 ├── config/
+│   ├── database.config.ts
+│   ├── jwt.config.ts
+│   └── swagger.config.ts
 ├── common/
 │   ├── decorators/
+│   │   ├── auth.decorator.ts
+│   │   └── roles.decorator.ts
 │   ├── filters/
+│   │   └── http-exception.filter.ts
 │   ├── guards/
+│   │   ├── auth.guard.ts
+│   │   └── roles.guard.ts
 │   ├── interceptors/
+│   │   └── logging.interceptor.ts
 │   └── pipes/
+│       └── validation.pipe.ts
 └── main.ts
 ```
 
-- **Feature modules** for business logic
-- **Core modules** for infrastructure
-- **Shared modules** for reusable utilities
-- **Test files** alongside source files (`.spec.ts`)
+### Module Organization Rules
 
-## 3. TypeScript Standards
+- **Feature modules** en `src/features/[module-name]/`
+- **Core infrastructure** en `src/core/`
+- **Shared utilities** en `src/shared/`
+- **Configuration** en `src/config/`
+- **Common components** en `src/common/`
+- **Test files** al lado del source (`.spec.ts`)
 
-### Strict Configuration
+## 2. File Naming Conventions (Project Specific)
 
-```json
+### TypeScript Files
+
+**Controllers**: `[module-name].controller.ts`
+
+- Examples: `user.controller.ts`, `patient.controller.ts`, `doctor.controller.ts`
+
+**Services**: `[module-name].service.ts`
+
+- Examples: `user.service.ts`, `patient.service.ts`, `doctor.service.ts`
+
+**Modules**: `[module-name].module.ts`
+
+- Examples: `user.module.ts`, `patient.module.ts`, `doctor.module.ts`
+
+**DTOs**: `[action]-[entity].dto.ts`
+
+- Examples: `create-user.dto.ts`, `update-patient.dto.ts`, `doctor-response.dto.ts`
+
+**Entities**: `[entity].entity.ts`
+
+- Examples: `user.entity.ts`, `patient.entity.ts`, `doctor.entity.ts`
+
+**Repositories**: `[entity].repository.ts`
+
+- Examples: `user.repository.ts`, `patient.repository.ts`, `doctor.repository.ts`
+
+**Tests**: `[filename].spec.ts`
+
+- Examples: `user.service.spec.ts`, `patient.controller.spec.ts`
+
+### Directory Names
+
+- **kebab-case** para directorios de módulos: `user-management`, `medical-records`
+- **plural** para nombres de entidades que representan colecciones: `users`, `patients`, `doctors`
+
+## 3. Business Domain Structure (Hospital Specific)
+
+### Core Entities
+
+**User Management:**
+
+- `User` - Base user entity with authentication
+- `Role` - User roles (admin, doctor, nurse, patient)
+- `Permission` - Granular permissions
+
+**Medical Domain:**
+
+- `Patient` - Patient information and medical history
+- `Doctor` - Doctor profiles and specializations
+- `Appointment` - Medical appointments and scheduling
+- `MedicalRecord` - Patient medical records
+- `Prescription` - Medical prescriptions
+
+**Hospital Management:**
+
+- `Department` - Hospital departments
+- `Room` - Hospital rooms and beds
+- `Schedule` - Doctor schedules and availability
+
+## 4. Response Format Standards (Project Specific)
+
+### Success Response Structure
+
+```typescript
+// Single resource response
 {
-    "compilerOptions": {
-        "strict": true,
-        "noImplicitAny": true,
-        "strictNullChecks": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "exactOptionalPropertyTypes": true
-    }
+  message: "Operation completed successfully",
+  data: User | Patient | Doctor
+}
+
+// Collection response
+{
+  message: "Resources retrieved successfully",
+  data: User[] | Patient[] | Doctor[],
+  meta: {
+    total: number,
+    page: number,
+    limit: number
+  }
+}
+
+// Create response
+{
+  message: "Resource created successfully",
+  data: User | Patient | Doctor
+}
+
+// Update response
+{
+  message: "Resource updated successfully",
+  data: User | Patient | Doctor
+}
+
+// Delete response
+{
+  message: "Resource deleted successfully"
 }
 ```
 
-### Type Rules
-
-- **NEVER use `any`** - Zero tolerance, absolute prohibition
-- **Prefer interfaces** over type aliases for objects
-- **Use enums** for fixed values, not magic strings
-- **Discriminated unions** for complex types
-- **const over let** when possible
-- **Explicit return types** for public methods
-
-## 4. Controllers
-
-### Controllers Must
-
-- **Only handle HTTP concerns** (request/response)
-- **Call services** for ALL business logic
-- **Use DTOs** with validation decorators
-- **Return HTTP responses** with proper status codes
-- **Document endpoints with Swagger/OpenAPI decorators**
-
-### Controllers Must NOT
-
-- **Access repositories directly**
-- **Contain validation logic** beyond DTO decorators
-- **Have business logic**
-- **Use any type** in method parameters
-- **Throw raw Error objects**
+### Error Response Structure
 
 ```typescript
-@ApiTags('Users')
-@Controller('users')
-export class UserController {
-    constructor(private readonly userService: UserService) {}
-
-    @Post()
-    @ApiOperation({ summary: 'Create a new user' })
-    @ApiCreatedResponse({
-        description: 'User successfully created',
-        type: UserResponseDto,
-    })
-    @ApiBadRequestResponse({
-        description: 'Invalid input data',
-    })
-    @ApiConflictResponse({
-        description: 'Email already exists',
-    })
-    @ApiUnauthorizedResponse({
-        description: 'Unauthorized access',
-    })
-    @ApiForbiddenResponse({
-        description: 'Forbidden operation',
-    })
-    async createUser(
-        @Body() createUserDto: CreateUserDto,
-    ): Promise<UserResponseDto> {
-        // ✅ Good: Just HTTP handling with full documentation
-        const user = await this.userService.createUser(createUserDto);
-        return { message: 'User created', data: user };
-    }
-
-    @Get(':id')
-    @ApiOperation({ summary: 'Get user by ID' })
-    @ApiParam({
-        name: 'id',
-        description: 'User ID',
-        type: String,
-    })
-    @ApiOkResponse({
-        description: 'User found',
-        type: UserResponseDto,
-    })
-    @ApiNotFoundResponse({
-        description: 'User not found',
-    })
-    @ApiUnauthorizedResponse({
-        description: 'Unauthorized access',
-    })
-    async getUserById(@Param('id') id: string): Promise<UserResponseDto> {
-        const user = await this.userService.findById(id);
-        return { data: user };
-    }
-
-    @Put(':id')
-    @ApiOperation({ summary: 'Update user by ID' })
-    @ApiParam({
-        name: 'id',
-        description: 'User ID',
-        type: String,
-    })
-    @ApiOkResponse({
-        description: 'User updated successfully',
-        type: UserResponseDto,
-    })
-    @ApiNotFoundResponse({
-        description: 'User not found',
-    })
-    @ApiBadRequestResponse({
-        description: 'Invalid input data',
-    })
-    @ApiUnauthorizedResponse({
-        description: 'Unauthorized access',
-    })
-    async updateUser(
-        @Param('id') id: string,
-        @Body() updateUserDto: UpdateUserDto,
-    ): Promise<UserResponseDto> {
-        const user = await this.userService.updateUser(id, updateUserDto);
-        return { message: 'User updated', data: user };
-    }
-
-    @Delete(':id')
-    @ApiOperation({ summary: 'Delete user by ID' })
-    @ApiParam({
-        name: 'id',
-        description: 'User ID',
-        type: String,
-    })
-    @ApiNoContentResponse({
-        description: 'User deleted successfully',
-    })
-    @ApiNotFoundResponse({
-        description: 'User not found',
-    })
-    @ApiUnauthorizedResponse({
-        description: 'Unauthorized access',
-    })
-    @ApiForbiddenResponse({
-        description: 'Forbidden operation',
-    })
-    async deleteUser(@Param('id') id: string): Promise<void> {
-        await this.userService.deleteUser(id);
-    }
+{
+  error: {
+    code: "VALIDATION_ERROR" | "NOT_FOUND" | "UNAUTHORIZED" | "FORBIDDEN",
+    message: "Human readable error message",
+    details?: any // Additional error context
+  },
+  timestamp: "2023-01-01T00:00:00.000Z",
+  path: "/api/users/123"
 }
 ```
 
-## 5. Services
+## 5. Database Naming Conventions (Project Specific)
 
-### Services Must
+### Table Names
 
-- **Contain all business rules**
-- **Be unit testable** without HTTP layer
-- **Have no direct usage** of Request/Response objects
-- **Handle business validation**
-- **Use dependency injection** via constructor
+- **snake_case** y plural: `users`, `patients`, `doctors`, `medical_records`
+- **Relational tables**: `user_roles`, `patient_doctors`, `appointment_prescriptions`
 
-### Services Must NOT
+### Column Names
 
-- **Know about HTTP**
-- **Access database directly** (use repositories)
-- **Handle HTTP responses**
-- **Have static methods** (breaks DI)
+- **snake_case**: `first_name`, `last_name`, `created_at`, `updated_at`
+- **Foreign keys**: `[table]_id`: `user_id`, `patient_id`, `doctor_id`
+- **Timestamps**: `created_at`, `updated_at` (mandatory for all entities)
 
-```typescript
-@Injectable()
-export class UserService {
-    constructor(
-        @InjectRepository(User)
-        private userRepository: UserRepository,
-        private emailService: EmailService,
-    ) {}
+### Indexes
 
-    async createUser(createUserDto: CreateUserDto): Promise<User> {
-        // ✅ Business logic here
-        if (await this.userRepository.existsByEmail(createUserDto.email)) {
-            throw new ConflictException('Email already exists');
-        }
+- **Primary keys**: `id` (UUID)
+- **Foreign keys**: Index on all `[table]_id` columns
+- **Unique constraints**: Email, medical license numbers, etc.
 
-        const user = await this.userRepository.create(createUserDto);
-        await this.emailService.sendWelcomeEmail(user.email);
-        return user;
-    }
-}
+## 6. Environment Configuration (Project Specific)
+
+### Required Environment Variables
+
+```bash
+# Application
+NODE_ENV=development|production|test
+PORT=3000
+
+# Database
+DATABASE_TYPE=postgres|mysql|mariadb
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=hospital_user
+DATABASE_PASSWORD=hospital_password
+DATABASE_NAME=hospital_db
+
+# Authentication
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRES_IN=24h
+REFRESH_TOKEN_SECRET=your-refresh-token-secret
+
+# Email
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=hospital@example.com
+EMAIL_PASSWORD=email-password
+
+# File Upload (Medical documents, images)
+UPLOAD_PATH=./uploads
+MAX_FILE_SIZE=10485760  # 10MB
+ALLOWED_FILE_TYPES=jpg,jpeg,png,pdf,doc,docx
+
+# Redis (for sessions, cache)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
 ```
 
-## 6. DTO & Validation
-
-### All Input Must Use DTOs With
-
-- **class-validator** decorators for validation
-- **class-transformer** for transformation
-- **@Transform()** for complex transformations
-- **@ApiProperty()** for Swagger documentation
-- **Whitelist option** to strip unknown properties
-
-### Controllers Must Use OpenAPI Decorators
-
-- **@ApiTags()** for grouping endpoints
-- **@ApiOperation()** for endpoint descriptions
-- **@ApiParam()** for path parameters
-- **@ApiQuery()** for query parameters
-- **@ApiBody()** when body schema needs explicit definition
-
-### Response Decorators - Use Specific HTTP Status Decorators:
-
-- **@ApiOkResponse()** - 200 OK (successful GET requests)
-- **@ApiCreatedResponse()** - 201 Created (successful POST requests)
-- **@ApiNoContentResponse()** - 204 No Content (successful DELETE/PUT without body)
-- **@ApiBadRequestResponse()** - 400 Bad Request (validation errors)
-- **@ApiUnauthorizedResponse()** - 401 Unauthorized (missing/invalid auth)
-- **@ApiForbiddenResponse()** - 403 Forbidden (auth valid but insufficient permissions)
-- **@ApiNotFoundResponse()** - 404 Not Found (resource doesn't exist)
-- **@ApiConflictResponse()** - 409 Conflict (resource already exists)
-- **@ApiUnprocessableEntityResponse()** - 422 Unprocessable Entity (semantic validation errors)
-- **@ApiInternalServerErrorResponse()** - 500 Internal Server Error (unexpected server errors)
-
-### Never
-
-- **Accept any** in controllers - Zero exceptions
-- **Reuse DTOs for database entities** - Clear separation mandatory
-- **Skip validation** in any endpoint - All inputs must be validated
-- **Use plain objects** without transformation - Always use typed DTOs
-- **Skip OpenAPI documentation** - All endpoints must be fully documented
-
-```typescript
-export class CreateUserDto {
-    @ApiProperty()
-    @IsEmail()
-    @IsNotEmpty()
-    email: string;
-
-    @ApiProperty()
-    @IsString()
-    @MinLength(8)
-    @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-        message: 'Password must contain uppercase, lowercase and number',
-    })
-    password: string;
-
-    @ApiProperty()
-    @Transform(({ value }) => value.trim())
-    @IsString()
-    @MinLength(2)
-    name: string;
-}
-```
-
-## 7. Error Handling
-
-### Rules
-
-- **Use Nest HttpException** or custom exceptions
-- **Do not throw raw Error** in controllers/services
-- **Create domain-specific exceptions**
-- **Centralize error mapping** with exception filters
-- **Log errors with context**
-
-### Exception Structure
-
-```typescript
-export class UserNotFoundException extends NotFoundException {
-    constructor(userId: string) {
-        super(`User with ID ${userId} not found`);
-    }
-}
-
-@Catch()
-export class AllExceptionsFilter implements ExceptionFilter {
-    catch(exception: unknown, host: ArgumentsHost) {
-        // Centralized error handling
-    }
-}
-```
-
-## 8. Database & Repositories
-
-### Architecture Flow
-
-**Controllers → Services → Repositories → Database**
-
-### Rules
-
-- **Never skip layers**
-- **Transactions must be explicit**
-- **No SQL in controllers/services** (use ORM/Query Builder)
-- **Repository pattern** for data access
-- **Custom repositories** for complex queries
-- **Connection management** via TypeORM module
-
-### Repository Structure
-
-```typescript
-@Injectable()
-export class UserRepository {
-    constructor(
-        @InjectRepository(User)
-        private ormRepository: Repository<User>,
-    ) {}
-
-    async findByEmail(email: string): Promise<User | null> {
-        return this.ormRepository.findOne({ where: { email } });
-    }
-
-    async create(userData: CreateUserDto): Promise<User> {
-        const user = this.ormRepository.create(userData);
-        return this.ormRepository.save(user);
-    }
-}
-```
-
-## 9. Dependency Injection
-
-### Rules
-
-- **Use constructor injection only**
-- **Do not instantiate services manually** with `new`
-- **Use @Injectable()** on all services
-- **Provider scopes** must be explicit (Default/Request/Transient)
-- **Interface injection** for better testability
-
-```typescript
-// ✅ Correct
-export class UserService {
-    constructor(
-        private userRepository: UserRepository,
-        private emailService: EmailService,
-    ) {}
-}
-
-// ❌ Wrong
-export class UserService {
-    private userRepository = new UserRepository(); // Don't do this!
-}
-```
-
-## 10. Logging
-
-### Rules
-
-- **Use Nest Logger** or centralized logger
-- **No console.log** in production code
-- **Structured logging** with context
-- **Appropriate log levels** (ERROR, WARN, INFO, DEBUG)
-- **Log business events**, not just technical details
-
-```typescript
-// ✅ Good
-this.logger.log('User created successfully', {
-    userId: user.id,
-    email: user.email,
-    timestamp: new Date().toISOString(),
-});
-
-// ❌ Bad - Never in production
-console.log('User created');
-```
-
-## 11. Config & Secrets
-
-### Rules
-
-- **Use @nestjs/config** with validation schema
-- **No hardcoded secrets** or environment checks
-- **Typed configuration objects**
-- **Environment-specific** configuration files
-- **Validation at startup**
-
-```typescript
-export const configValidationSchema = Joi.object({
-    NODE_ENV: Joi.string()
-        .valid('development', 'production', 'test')
-        .required(),
-    PORT: Joi.number().default(3000),
-    DATABASE_URL: Joi.string().required(),
-    JWT_SECRET: Joi.string().required(),
-});
-```
-
-## 12. Async & Promises
-
-### Rules
-
-- **Always use async/await**
-- **No floating promises**
-- **Handle expected failures explicitly**
-- **Error boundaries** for async operations
-- **Type-safe async operations**
-
-```typescript
-// ❌ Bad - Floating promise
-updateUser(id, updateDto); // No await or error handling
-```
-
-## 13. Naming Conventions
-
-### Classes: PascalCase
-
-- `UserService`, `CreateUserDto`, `UserRepository`
-
-### Files: kebab-case
-
-- `user.service.ts`, `create-user.dto.ts`, `user.controller.ts`
-
-### Services: `*.service.ts`
-
-- `user.service.ts`, `auth.service.ts`
-
-### Controllers: `*.controller.ts`
-
-- `user.controller.ts`, `auth.controller.ts`
-
-### DTOs: `*.dto.ts`
-
-- `create-user.dto.ts`, `update-user.dto.ts`
-
-### Entities: `*.entity.ts`
-
-- `user.entity.ts`, `patient.entity.ts`
-
-## 14. Testing
-
-### Unit Tests
-
-- **Services must have unit tests** when business logic exists
-- **Test individual methods** with proper mocking
-- **Arrange-Act-Assert** pattern
-- **Coverage > 90%** for business logic
-
-### E2E Tests
-
-- **Controllers must have e2e tests** for endpoints
-- **Test all HTTP status codes**
-- **Test validation errors**
-- **Test authentication/authorization**
+## 7. Testing Strategy (Project Specific)
 
 ### Test Structure
 
-```typescript
-describe('UserService', () => {
-    let service: UserService;
-    let repository: jest.Mocked<UserRepository>;
-
-    beforeEach(async () => {
-        // Setup test module
-    });
-
-    describe('createUser', () => {
-        it('should create user successfully', async () => {
-            // Arrange
-            // Act
-            // Assert
-        });
-    });
-});
+```
+src/features/user/
+├── user.controller.ts
+├── user.controller.spec.ts    # E2E tests for HTTP endpoints
+├── user.service.ts
+├── user.service.spec.ts       # Unit tests for business logic
+├── user.repository.ts
+├── user.repository.spec.ts     # Unit tests for data access
+└── user.module.ts
 ```
 
-### Testing Rules
+### Test Categories
 
-- **No mocking of core Nest framework**
-- **Use TestModules** for integration tests
-- **Clean test data** after each test
-- **Test error scenarios**
+**Unit Tests:**
 
-## 15. Code Smells (Must Be Flagged)
+- Services: Business logic, validation, error handling
+- Repositories: Data access, query building
+- Utilities: Helper functions, transformers
 
-### ❌ Fat Controllers
+**Integration Tests:**
 
-- Controllers with more than HTTP handling
-- Business logic in controller methods
-- Direct database access
+- Controllers: HTTP layer with mocked services
+- Modules: Dependency injection, provider configuration
 
-### ❌ God Services
+**E2E Tests:**
 
-- Services doing too many things
-- Services with many dependencies
-- Static methods that break DI
+- Complete flows: Patient registration, appointment booking
+- Authentication: Login, logout, token refresh
+- File uploads: Medical document handling
 
-### ❌ Architecture Violations
+## 8. Code Review Checklist (Project Specific)
 
-- Direct DB calls outside repository layer
-- DTOs reused for persistence models
-- Logic inside decorators beyond simple validation
-- Skipping layers (Controller → Repository)
+### Architecture & Structure
 
-### ❌ TypeScript Violations
+- [ ] Feature follows `src/features/[module]/` structure
+- [ ] All files follow naming conventions
+- [ ] Proper separation of concerns (Controller → Service → Repository)
+- [ ] Database entities use snake_case columns and table names
 
-- Use of `any` type
-- Missing type annotations
-- Implicit any parameters
+### Business Logic
 
-### ❌ Security Issues
+- [ ] Medical validation rules implemented correctly
+- [ ] Patient data follows HIPAA compliance
+- [ ] Appointment scheduling prevents conflicts
+- [ ] Medical records maintain audit trail
 
-- Unvalidated inputs
-- Hardcoded secrets
-- Missing authentication/authorization
+### Security
 
-## 16. Pull Request Expectations
+- [ ] Patient data encryption at rest
+- [ ] Authentication required for medical data access
+- [ ] Role-based access control for different user types
+- [ ] Audit logging for medical record access
 
-### Code Quality
+### Documentation
 
-- **Code must compile** without errors
-- **No lint errors** - ESLint + Prettier
-- **TypeScript strict mode** compliance
-- **No TODOs** without ticket reference
-- **Documentation updated** for API changes
-
-### Testing
-
-- **All tests pass**
-- **New features have tests**
-- **Coverage not decreased**
-- **No test regressions**
-
-### Review Checklist
-
-- [ ] TypeScript strict mode compliance
-- [ ] No `any` types
-- [ ] Proper error handling
-- [ ] DTO validation implemented
-- [ ] Architecture layers respected
-- [ ] Tests added and passing
-- [ ] Documentation updated
-- [ ] No hardcoded secrets
-- [ ] Logging implemented appropriately
-- [ ] No circular dependencies
-- [ ] OpenAPI/Swagger documentation complete
-- [ ] All responses documented with proper status codes
+- [ ] All medical endpoints documented with medical terminology
+- [ ] Response examples include real medical data structures
+- [ ] Error messages provide clear medical context
 
 ---
 
-**REMEMBER**: These rules aren't suggestions - they're requirements for maintainable, scalable NestJS applications. Following strict patterns today prevents technical debt tomorrow.
-
-**Code Review Mantra**: "Does this follow the rules, or am I taking a shortcut?"
+**Project Mantra**: "Medical software requires absolute precision and security. Every line of code impacts patient care."

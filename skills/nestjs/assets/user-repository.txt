@@ -1,0 +1,79 @@
+// ===== USER REPOSITORY =====
+// Copy to: src/features/user/repositories/user.repository.ts
+
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../entities/user.entity';
+import { CreateUserDto, UpdateUserDto } from '../dto';
+
+@Injectable()
+export class UserRepository {
+    constructor(
+        @InjectRepository(User)
+        private readonly ormRepository: Repository<User>,
+    ) {}
+
+    async create(createUserDto: CreateUserDto): Promise<User> {
+        const user = this.ormRepository.create(createUserDto);
+        return this.ormRepository.save(user);
+    }
+
+    async findAll(): Promise<User[]> {
+        return this.ormRepository.find();
+    }
+
+    async findById(id: string): Promise<User | null> {
+        return this.ormRepository.findOne({ where: { id } });
+    }
+
+    async findByEmail(email: string): Promise<User | null> {
+        return this.ormRepository.findOne({ where: { email } });
+    }
+
+    async existsByEmail(email: string): Promise<boolean> {
+        const count = await this.ormRepository.count({ where: { email } });
+        return count > 0;
+    }
+
+    async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+        await this.ormRepository.update(id, updateUserDto);
+        const user = await this.findById(id);
+        if (!user) {
+            throw new Error(`User with ID ${id} not found after update`);
+        }
+        return user;
+    }
+
+    async delete(id: string): Promise<void> {
+        await this.ormRepository.delete(id);
+    }
+}
+
+// ===== USAGE NOTES =====
+/*
+1. Repository pattern features:
+   - Abstracts database operations
+   - Uses TypeORM Repository
+   - Handles all CRUD operations
+   - Custom queries for business logic
+
+2. Methods implemented:
+   - create(): Create new user
+   - findAll(): Get all users
+   - findById(): Find by primary key
+   - findByEmail(): Find by email (unique)
+   - existsByEmail(): Check existence
+   - update(): Update user by ID
+   - delete(): Delete user by ID
+
+3. Error handling:
+   - Returns null for not found cases
+   - Throws errors for unexpected situations
+   - Validates post-update existence
+
+4. TypeORM integration:
+   - @InjectRepository for DI
+   - Repository<User> for type safety
+   - TypeORM query methods
+*/

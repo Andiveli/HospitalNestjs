@@ -8,14 +8,14 @@ import { DocumentsEntity } from 'src/documents/documents.entity';
 @Entity('tipo_documento')
 export class TipoDocumentoEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({ type: 'varchar', length: 100 })
-    nombre: string;
+    nombre!: string;
 
     @Column({ type: 'text', nullable: true })
     descripcion?: string;
 
     @OneToMany(() => DocumentsEntity, (documento) => documento.tipo)
-    documentos: DocumentsEntity[];
+    documentos!: DocumentsEntity[];
 }

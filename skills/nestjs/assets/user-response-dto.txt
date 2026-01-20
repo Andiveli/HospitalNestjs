@@ -1,0 +1,47 @@
+// ===== USER RESPONSE DTO =====
+// Copy to: src/features/user/dto/user-response.dto.ts
+
+import { ApiProperty } from '@nestjs/swagger';
+
+export class UserResponseDto {
+    @ApiProperty({
+        description: 'Success message',
+        example: 'User created successfully',
+        required: false,
+    })
+    message?: string;
+
+    @ApiProperty({
+        description: 'User data',
+        example: {
+            id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+            email: 'user@example.com',
+            name: 'John Doe',
+            createdAt: '2023-01-01T00:00:00.000Z',
+            updatedAt: '2023-01-01T00:00:00.000Z',
+        },
+    })
+    data: any; // Replace 'any' with User entity type
+}
+
+// ===== USAGE NOTES =====
+/*
+1. Response format standard:
+   - Optional message for success operations
+   - Required data field containing entity
+   - Consistent across all endpoints
+
+2. Usage patterns:
+   - Single resource: { message?: string, data: User }
+   - Collection: { message: string, data: User[] }
+   - No content: { message: string } (for DELETE)
+
+3. OpenAPI integration:
+   - @ApiProperty for documentation
+   - Example values shown
+   - Clear descriptions
+
+4. Type safety:
+   - Replace 'any' with actual User entity
+   - Import User from './entities/user.entity'
+*/

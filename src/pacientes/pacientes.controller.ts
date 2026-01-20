@@ -14,7 +14,13 @@ import UserRequest from 'src/people/people.request';
 import { InfoDto } from './dto/info.dto';
 import { DocsDto } from './dto/doc.dto';
 import { PacientesEntity } from './pacientes.entity';
-import { ApiBadRequestResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+    ApiBadRequestResponse,
+    ApiForbiddenResponse,
+    ApiNotFoundResponse,
+    ApiOkResponse,
+    ApiOperation,
+} from '@nestjs/swagger';
 
 @Controller('pacientes')
 export class PacientesController {
@@ -54,7 +60,7 @@ export class PacientesController {
     @Roles(Rol.Paciente)
     @Post('addDocs')
     @HttpCode(HttpStatus.ACCEPTED)
-    addDocs(@Request() req: UserRequest, @Body() body: DocsDto) {
+    addDocs(@Request() _req: UserRequest, @Body() _body: DocsDto) {
         console.log('Agregando datos');
     }
 }
