@@ -1,0 +1,55 @@
+import {
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    OneToMany,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from 'typeorm';
+import { EstiloVidaEntity } from '../estilo-vida/estilo-vida.entity';
+import { PacienteEnfermedadEntity } from '../paciente-enfermedad/paciente-enfermedad.entity';
+import { PaisEntity } from '../paises/paises.entity';
+import { PeopleEntity } from '../people/people.entity';
+import { GrupoSanguineoEntity } from '../sangre/sangre.entity';
+
+@Entity('pacientes')
+export class PacientesEntity {
+    @PrimaryGeneratedColumn({ name: 'usuario_id' })
+    usuarioId!: number;
+
+    @OneToOne(() => PeopleEntity)
+    @JoinColumn({ name: 'usuario_id' })
+    person!: PeopleEntity;
+
+    @Column('date', { name: 'fecha_nacimiento' })
+    fechaNacimiento!: Date;
+
+    @ManyToOne(() => PaisEntity, { nullable: false })
+    @JoinColumn({ name: 'pais_id' })
+    pais!: PaisEntity;
+
+    @Column('varchar', {
+        length: 150,
+        nullable: true,
+        name: 'lugar_residencia',
+    })
+    lugarResidencia!: string;
+
+    @Column('char', { length: 10, nullable: true, name: 'numero_celular' })
+    numeroCelular!: string;
+
+    @ManyToOne(() => GrupoSanguineoEntity, { nullable: false })
+    @JoinColumn({ name: 'grupo_sanguineo_id' })
+    grupoSanguineo!: GrupoSanguineoEntity;
+
+    @ManyToOne(() => EstiloVidaEntity, { nullable: false })
+    @JoinColumn({ name: 'estilo_vida_id' })
+    estiloVida!: EstiloVidaEntity;
+
+    @OneToMany(
+        () => PacienteEnfermedadEntity,
+        (pacienteEnfermedad) => pacienteEnfermedad.paciente,
+    )
+    pacienteEnfermedades!: PacienteEnfermedadEntity[];
+}

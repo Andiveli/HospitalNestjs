@@ -2,82 +2,92 @@
 
 ## Available Skills
 
-| Skill Name  | Description                                                                          | Documentation                      |
-| ----------- | ------------------------------------------------------------------------------------ | ---------------------------------- |
-| `AGENTS.md` | NestJS + TypeScript enterprise patterns with strict type safety and SOLID principles | [SKILL.md](skills/nestjs/SKILL.md) |
+| Skill Name | Description                                                                          | Documentation                      |
+| ---------- | ------------------------------------------------------------------------------------ | ---------------------------------- |
+| `nestjs`   | NestJS + TypeScript enterprise patterns with strict type safety and SOLID principles | [SKILL.md](skills/nestjs/SKILL.md) |
 
-## 1. Project Structure (Hospital Specific)
+## Important: Spanish Domain Language
+
+> **This project uses Spanish for domain naming** because the database schema was designed in Spanish.
+> This is an intentional decision to maintain consistency with the existing database.
+> All code patterns and best practices still apply - only the language of domain terms differs.
+
+## 1. Project Structure
 
 ```
 src/
 ├─ main.ts
 ├─ app.module.ts
-├─ config/
-│  ├─ env.validation.ts
-│  ├─ configuration.ts
-│  └─ database.config.ts
 │
-├─ common/
-│  ├─ decorators/
-│  ├─ filters/            # exception filters
-│  ├─ guards/
-│  ├─ interceptors/
-│  ├─ pipes/
-│  ├─ middleware/
-│  ├─ utils/
-│  └─ constants/
-│
-├─ infrastructure/        # dependencias externas
-│  ├─ database/
-│  │  ├─ prisma/ | typeorm/
-│  │  │  ├─ migrations/
-│  │  │  └─ repositories/
-│  │  └─ database.module.ts
-│  ├─ messaging/          # kafka, rabbitmq, sqs
-│  ├─ cache/              # redis
-│  └─ storage/            # s3, gcs
-│
-├─ modules/               # dominios del negocio
+├─ features/                 # Feature modules (dominio)
 │  ├─ auth/
-│  │  ├─ auth.controller.ts
-│  │  ├─ auth.service.ts
-│  │  ├─ dto/
-│  │  ├─ strategies/
-│  │  ├─ guards/
-│  │  └─ auth.module.ts
-│  │
-│  ├─ users/
 │  │  ├─ controllers/
 │  │  ├─ services/
 │  │  ├─ dto/
 │  │  ├─ entities/
 │  │  ├─ repositories/
-│  │  └─ users.module.ts
+│  │  ├─ guards/
+│  │  ├─ strategies/
+│  │  ├─ auth.module.ts
+│  │  └─ auth.controller.spec.ts
 │  │
-│  ├─ orders/
-│  │  ├─ application/     # casos de uso
-│  │  ├─ domain/          # entidades, value objects
-│  │  ├─ infrastructure/ # repos concretos
-│  │  └─ orders.module.ts
+│  ├─ citas/                 # Appointments
+│  │  ├─ dto/
+│  │  ├─ entities/
+│  │  ├─ repositories/
+│  │  ├─ citas.controller.ts
+│  │  ├─ citas.service.ts
+│  │  ├─ citas.module.ts
+│  │  └─ citas.service.spec.ts
 │  │
-│  └─ ...
+│  ├─ pacientes/             # Patients
+│  ├─ medicos/               # Doctors
+│  ├─ especialidad/          # Specialties
+│  ├─ horario/               # Schedules
+│  └─ [other-modules]/
 │
-├─ shared/                # reutilizable entre módulos
+├─ core/                     # Core infrastructure
+│  ├─ database/
+│  │  ├─ typeorm/
+│  │  │  ├─ migrations/
+│  │  │  └─ data-source.ts
+│  │  ├─ database.module.ts
+│  │  └─ database.service.ts
+│  │
+│  ├─ messaging/
+│  │  └─ email/
+│  │     ├─ email.module.ts
+│  │     ├─ email.service.ts
+│  │     ├─ email.processor.ts
+│  │     └─ templates/
+│  │
+│  ├─ storage/
+│  │  └─ s3.service.ts
+│  │
+│  └─ core.module.ts
+│
+├─ shared/                   # Shared utilities (negocio reutilizable)
 │  ├─ dto/
 │  ├─ enums/
 │  ├─ interfaces/
+│  ├─ constants/
 │  └─ services/
 │
-├─ jobs/                  # cron, workers
-│  └─ cleanup.job.ts
+├─ common/                   # Common components (technical cross-cutting)
+│  ├─ decorators/
+│  ├─ guards/
+│  ├─ interceptors/
+│  ├─ filters/
+│  ├─ pipes/
+│  └─ middleware/
 │
-├─ events/
-│  ├─ listeners/
-│  └─ emitters/
+├─ config/                   # Configuration
+│  ├─ configuration.ts
+│  ├─ env.schema.ts
+│  ├─ database.config.ts
+│  └─ app.config.ts
 │
-└─ test/
-   ├─ unit/
-   └─ e2e/
+└─ app.controller.spec.ts    # Tests alongside source
 ```
 
 ### Module Organization Rules
@@ -87,106 +97,126 @@ src/
 - **Shared utilities** en `src/shared/`
 - **Configuration** en `src/config/`
 - **Common components** en `src/common/`
-- **Test files** al lado del source (`.spec.ts`)
+- **Test files** alongside source (`.spec.ts`)
 
-## 2. File Naming Conventions (Project Specific)
+## 2. File Naming Conventions
 
-### TypeScript Files
+### TypeScript Files (Spanish Domain Names)
 
-**Controllers**: `[module-name].controller.ts`
+**Controllers**: `[modulo].controller.ts`
 
-- Examples: `user.controller.ts`, `patient.controller.ts`, `doctor.controller.ts`
+- Examples: `citas.controller.ts`, `pacientes.controller.ts`, `medicos.controller.ts`
 
-**Services**: `[module-name].service.ts`
+**Services**: `[modulo].service.ts`
 
-- Examples: `user.service.ts`, `patient.service.ts`, `doctor.service.ts`
+- Examples: `citas.service.ts`, `pacientes.service.ts`, `medicos.service.ts`
 
-**Modules**: `[module-name].module.ts`
+**Modules**: `[modulo].module.ts`
 
-- Examples: `user.module.ts`, `patient.module.ts`, `doctor.module.ts`
+- Examples: `citas.module.ts`, `pacientes.module.ts`, `medicos.module.ts`
 
-**DTOs**: `[action]-[entity].dto.ts`
+**DTOs**: `[accion]-[entidad].dto.ts`
 
-- Examples: `create-user.dto.ts`, `update-patient.dto.ts`, `doctor-response.dto.ts`
+- Examples: `create-cita.dto.ts`, `update-paciente.dto.ts`, `medico-response.dto.ts`
 
-**Entities**: `[entity].entity.ts`
+**Entities**: `[entidad].entity.ts` (singular preferred, plural accepted for legacy)
 
-- Examples: `user.entity.ts`, `patient.entity.ts`, `doctor.entity.ts`
+- Examples: `cita.entity.ts`, `paciente.entity.ts`, `medico.entity.ts`
+- Legacy files: `pacientes.entity.ts`, `medicos.entity.ts` are acceptable (pre-existing)
 
-**Repositories**: `[entity].repository.ts`
+**Repositories**: `[entidad].repository.ts`
 
-- Examples: `user.repository.ts`, `patient.repository.ts`, `doctor.repository.ts`
+- Examples: `cita.repository.ts`, `paciente.repository.ts`, `medico.repository.ts`
 
 **Tests**: `[filename].spec.ts`
 
-- Examples: `user.service.spec.ts`, `patient.controller.spec.ts`
+- Examples: `citas.service.spec.ts`, `pacientes.controller.spec.ts`
 
 ### Directory Names
 
-- **kebab-case** para directorios de módulos: `user-management`, `medical-records`
-- **plural** para nombres de entidades que representan colecciones: `users`, `patients`, `doctors`
+- **kebab-case** for module directories: `estado-vida`, `estilo-vida`, `tipo-enfermedad`
+- **plural** for entity collections: `citas`, `pacientes`, `medicos`
 
-## 3. Business Domain Structure (Hospital Specific)
+## 3. Business Domain Structure
+
+### Domain Language Mapping (Spanish → English)
+
+| Spanish            | English           | Description                 |
+| ------------------ | ----------------- | --------------------------- |
+| `Cita`             | Appointment       | Medical appointments        |
+| `Paciente`         | Patient           | Patient information         |
+| `Medico`           | Doctor            | Doctor profiles             |
+| `Especialidad`     | Specialty         | Medical specialties         |
+| `Horario`          | Schedule          | Doctor schedules            |
+| `HistoriaClinica`  | MedicalRecord     | Patient medical history     |
+| `RegistroAtencion` | AttentionRecord   | Appointment diagnosis/notes |
+| `EstadoCita`       | AppointmentStatus | Appointment states          |
+| `Enfermedad`       | Disease           | Diseases/conditions         |
+| `Persona`          | Person            | Base person entity          |
+| `Rol`              | Role              | User roles                  |
+| `Permiso`          | Permission        | Granular permissions        |
 
 ### Core Entities
 
-**User Management:**
+**Gestión de Usuarios:**
 
-- `User` - Base user entity with authentication
-- `Role` - User roles (admin, doctor, nurse, patient)
-- `Permission` - Granular permissions
+- `Persona` - Base person entity
+- `Rol` - User roles (admin, medico, paciente)
+- `Permiso` - Granular permissions
 
-**Medical Domain:**
+**Dominio Médico:**
 
-- `Patient` - Patient information and medical history
-- `Doctor` - Doctor profiles and specializations
-- `Appointment` - Medical appointments and scheduling
-- `MedicalRecord` - Patient medical records
-- `Prescription` - Medical prescriptions
+- `Paciente` - Patient information and medical history
+- `Medico` - Doctor profiles and specializations
+- `Cita` - Medical appointments and scheduling
+- `HistoriaClinica` - Patient medical records
+- `RegistroAtencion` - Appointment diagnosis and notes
+- `Especialidad` - Medical specialties
 
-**Hospital Management:**
+**Gestión Hospitalaria:**
 
-- `Department` - Hospital departments
-- `Room` - Hospital rooms and beds
-- `Schedule` - Doctor schedules and availability
+- `Horario` - Doctor schedules and availability
+- `DiaAtencion` - Days of attention
+- `ExcepcionHorario` - Schedule exceptions
 
-## 4. Response Format Standards (Project Specific)
+## 4. Response Format Standards
 
 ### Success Response Structure
 
 ```typescript
 // Single resource response
 {
-  message: "Operation completed successfully",
-  data: User | Patient | Doctor
+  message: "Operación completada exitosamente",
+  data: Cita | Paciente | Medico
 }
 
-// Collection response
+// Collection response (paginated)
 {
-  message: "Resources retrieved successfully",
-  data: User[] | Patient[] | Doctor[],
+  message: "Recursos obtenidos exitosamente",
+  data: Cita[] | Paciente[] | Medico[],
   meta: {
     total: number,
     page: number,
-    limit: number
+    limit: number,
+    totalPages: number
   }
 }
 
 // Create response
 {
-  message: "Resource created successfully",
-  data: User | Patient | Doctor
+  message: "Recurso creado exitosamente",
+  data: Cita | Paciente | Medico
 }
 
 // Update response
 {
-  message: "Resource updated successfully",
-  data: User | Patient | Doctor
+  message: "Recurso actualizado exitosamente",
+  data: Cita | Paciente | Medico
 }
 
-// Delete response
+// Delete response (soft delete)
 {
-  message: "Resource deleted successfully"
+  message: "Recurso eliminado exitosamente"
 }
 ```
 
@@ -194,87 +224,125 @@ src/
 
 ```typescript
 {
-  error: {
-    code: "VALIDATION_ERROR" | "NOT_FOUND" | "UNAUTHORIZED" | "FORBIDDEN",
-    message: "Human readable error message",
-    details?: any // Additional error context
-  },
-  timestamp: "2023-01-01T00:00:00.000Z",
-  path: "/api/users/123"
+  statusCode: 400 | 401 | 403 | 404 | 409 | 500,
+  message: "Mensaje de error legible",
+  error: "Bad Request" | "Unauthorized" | "Forbidden" | "Not Found" | "Conflict"
 }
 ```
 
-## 5. Database Naming Conventions (Project Specific)
+## 5. Database Naming Conventions
+
+> **IMPORTANT**: This database uses Spanish naming conventions.
+> Do NOT change column/table names - they must match the existing schema.
 
 ### Table Names
 
-- **snake_case** y plural: `users`, `patients`, `doctors`, `medical_records`
-- **Relational tables**: `user_roles`, `patient_doctors`, `appointment_prescriptions`
+- **snake_case** y plural: `citas`, `pacientes`, `medicos`, `estados_cita`
+- **Relational tables**: `medico_especialidad`, `paciente_enfermedad`
 
 ### Column Names
 
-- **snake_case**: `first_name`, `last_name`, `created_at`, `updated_at`
-- **Foreign keys**: `[table]_id`: `user_id`, `patient_id`, `doctor_id`
-- **Timestamps**: `created_at`, `updated_at` (mandatory for all entities)
+- **snake_case**: `nombre`, `apellido`, `fecha_nacimiento`
+- **Foreign keys**: `[tabla]_id`: `paciente_id`, `medico_id`, `estado_id`
+- **Timestamps**: Use existing column names from database:
+    - `fecha_hora_creacion` - Creation timestamp
+    - `fecha_hora_inicio` - Start datetime
+    - `fecha_hora_fin` - End datetime
 
-### Indexes
+### TypeORM Entity Rules
 
-- **Primary keys**: `id` (UUID)
-- **Foreign keys**: Index on all `[table]_id` columns
-- **Unique constraints**: Email, medical license numbers, etc.
+```typescript
+// CORRECT: Match database column names exactly
+@Column({ name: 'fecha_hora_creacion' })
+fechaHoraCreacion: Date;
 
-## 6. Environment Configuration (Project Specific)
+// CORRECT: Use camelCase in TypeORM queries
+.where('cita.medicoId = :medicoId')  // TypeORM relation property
+
+// WRONG: Don't use snake_case in TypeORM queries
+.where('cita.medico_id = :medicoId')  // This won't work!
+```
+
+### Primary Keys
+
+- **Integer auto-increment**: `id` for most tables
+- **Composite keys**: Some tables use `usuario_id` as PK (e.g., `medicos`, `pacientes`)
+
+## 6. Environment Configuration
 
 ### Required Environment Variables
 
 ```bash
-# Application
-=development|production|test
-PORT=3000
-
-# Database
+# Database (REQUIRED)
 DB_TYPE=postgres|mysql|mariadb
-DB_HOST=localhost 
-DB_PORT=5432
+DB_HOST=localhost
+DB_PORT=3306
 DB_USER=hospital_user
 DB_PASS=hospital_password
 DB_NAME=hospital_db
 
-# Authentication
+# Authentication (REQUIRED)
 JWT_SECRET=your-super-secret-jwt-key
-JWT_EXPIRES_IN=24h
-REFRESH_TOKEN_SECRET=your-refresh-token-secret
 
-# Email
+# Email (REQUIRED)
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=hospital@example.com
 EMAIL_PASS=email-password
+FRONTEND_URL=http://localhost:3000
 
-# File Upload (Medical documents, images)
-UPLOAD_PATH=./uploads
-MAX_FILE_SIZE=10485760  # 10MB
-ALLOWED_FILE_TYPES=jpg,jpeg,png,pdf,doc,docx
-
-# Redis (for sessions, cache)
+# Redis (OPTIONAL - for cache and queues)
 REDIS_HOST=localhost
 REDIS_PORT=6379
-REDIS_PASSWORD=
 ```
 
-## 7. Testing Strategy (Project Specific)
+### Configuration Usage
+
+```typescript
+// CORRECT: Use ConfigService for all config values
+type: configService.get<'postgres' | 'mysql' | 'mariadb'>('DB_TYPE'),
+
+// WRONG: Hardcoded values
+type: 'mariadb',  // Never hardcode!
+```
+
+## 7. Business Rules (Citas Module)
+
+### Appointment Creation
+
+- Validate doctor exists
+- Validate future date
+- Check for scheduling conflicts (same doctor, overlapping time)
+- Auto-calculate `fechaHoraFin` (+30 minutes)
+- Initial status: `pendiente`
+
+### Appointment Update
+
+- Only `pendiente` status appointments
+- **72-hour rule**: Only if 72+ hours before appointment
+- Cannot change doctor (medicoId)
+- Re-validate scheduling conflicts
+
+### Appointment Cancellation (Soft Delete)
+
+- Only `pendiente` status appointments
+- **72-hour rule**: Only if 72+ hours before appointment
+- Changes status to `cancelada` (does not delete record)
+
+## 8. Testing Strategy
 
 ### Test Structure
 
 ```
-src/features/user/
-├── user.controller.ts
-├── user.controller.spec.ts    # E2E tests for HTTP endpoints
-├── user.service.ts
-├── user.service.spec.ts       # Unit tests for business logic
-├── user.repository.ts
-├── user.repository.spec.ts     # Unit tests for data access
-└── user.module.ts
+src/features/citas/
+├── citas.controller.ts
+├── citas.controller.spec.ts    # Controller tests
+├── citas.service.ts
+├── citas.service.spec.ts       # Service unit tests
+├── repositories/
+│   ├── cita.repository.ts
+│   └── cita.repository.spec.ts # Repository tests
+└── citas.module.ts
 ```
 
 ### Test Categories
@@ -294,37 +362,38 @@ src/features/user/
 
 - Complete flows: Patient registration, appointment booking
 - Authentication: Login, logout, token refresh
-- File uploads: Medical document handling
 
-## 8. Code Review Checklist (Project Specific)
+## 9. Code Review Checklist
 
 ### Architecture & Structure
 
 - [ ] Feature follows `src/features/[module]/` structure
-- [ ] All files follow naming conventions
-- [ ] Proper separation of concerns (Controller → Service → Repository)
-- [ ] Database entities use snake_case columns and table names
+- [ ] Files follow Spanish naming conventions consistently
+- [ ] Proper separation: Controller → Service → Repository
+- [ ] No `any` types - use proper TypeScript types
+- [ ] DTOs use class-validator decorators
 
 ### Business Logic
 
 - [ ] Medical validation rules implemented correctly
-- [ ] Patient data follows HIPAA compliance
 - [ ] Appointment scheduling prevents conflicts
-- [ ] Medical records maintain audit trail
+- [ ] 72-hour rule enforced for updates/cancellations
+- [ ] Soft deletes used (no hard deletes on medical data)
 
 ### Security
 
-- [ ] Patient data encryption at rest
-- [ ] Authentication required for medical data access
-- [ ] Role-based access control for different user types
-- [ ] Audit logging for medical record access
+- [ ] JWT authentication on all medical endpoints
+- [ ] Role-based access control where needed
+- [ ] No sensitive data in logs (passwords, tokens)
+- [ ] Input validation on all DTOs
 
-### Documentation
+### Database
 
-- [ ] All medical endpoints documented with medical terminology
-- [ ] Response examples include real medical data structures
-- [ ] Error messages provide clear medical context
+- [ ] Entity column names match database schema exactly
+- [ ] Use camelCase for TypeORM relation queries
+- [ ] Proper indexes on foreign keys
+- [ ] Transactions for multi-table operations
 
 ---
 
-**Project Mantra**: "Medical software requires absolute precision and security. Every line of code impacts patient care."
+**Project Mantra**: "El software médico requiere precisión absoluta y seguridad. Cada línea de código impacta el cuidado del paciente."
