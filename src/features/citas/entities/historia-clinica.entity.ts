@@ -1,5 +1,5 @@
+import { DocumentsEntity } from 'src/features/documents/documents.entity';
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { DocumentsEntity } from '../documents/documents.entity';
 
 /**
  * Entidad para historias clínicas de pacientes

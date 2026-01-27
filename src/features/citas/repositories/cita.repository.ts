@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan, Not } from 'typeorm';
+import { Repository, MoreThan, Not, Between } from 'typeorm';
 import { CitaEntity } from '../entities/cita.entity';
 import { EstadoCitaEntity } from '../entities/estado-cita.entity';
 import { EstadoCita } from '../constants/estado-cita.constants';
@@ -320,5 +320,27 @@ export class CitaRepository {
 
         // 4. Retornar la cita actualizada
         return this.findById(id);
+    }
+
+    /**
+     * Obtiene las citas pendientes de un médico para una fecha específica
+     * @param medicoId - ID del médico
+     * @param fecha - Fecha a consultar (formato YYYY-MM-DD)
+     * @returns Array de citas pendientes del médico para esa fecha
+     */
+    async findCitasPendientesPorMedicoYFecha(
+        medicoId: number,
+        fecha: string,
+    ): Promise<CitaEntity[]> {
+        const inicioDia = new Date(fecha + 'T00:00:00');
+        const finDia = new Date(fecha + 'T23:59:59');
+
+        return this.ormRepository.find({
+            where: {
+                medico: { usuarioId: medicoId },
+                fechaHoraInicio: Between(inicioDia, finDia),
+                estado: { nombre: EstadoCita.PENDIENTE },
+            },
+        });
     }
 }

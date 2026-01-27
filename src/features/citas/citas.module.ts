@@ -9,6 +9,9 @@ import { HistoriaClinicaEntity } from './entities/historia-clinica.entity';
 import { CitaRepository } from './repositories/cita.repository';
 import { MedicoEntity } from '../medicos/medicos.entity';
 import { PacientesEntity } from '../pacientes/pacientes.entity';
+import { HorarioMedicoEntity } from '../horario/horario-medico.entity';
+import { DiaAtencionEntity } from '../horario/dia-atencion.entity';
+import { ExcepcionHorarioEntity } from '../horario/excepcion-horario.entity';
 
 @Module({
     imports: [
@@ -19,6 +22,9 @@ import { PacientesEntity } from '../pacientes/pacientes.entity';
             HistoriaClinicaEntity,
             MedicoEntity,
             PacientesEntity,
+            HorarioMedicoEntity,
+            DiaAtencionEntity,
+            ExcepcionHorarioEntity,
         ]),
     ],
     controllers: [CitasController],

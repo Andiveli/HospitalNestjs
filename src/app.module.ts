@@ -82,9 +82,9 @@ import { TipoEnfermedadModule } from './features/tipo-enfermedad/tipo-enfermedad
             imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
-                type: configService.get<'postgres' | 'mysql' | 'mariadb'>(
-                    'DB_TYPE',
-                ),
+                type: configService.getOrThrow<
+                    'postgres' | 'mysql' | 'mariadb'
+                >('DB_TYPE'),
                 host: configService.get<string>('DB_HOST'),
                 username: configService.get<string>('DB_USER'),
                 password: configService.get<string>('DB_PASS'),

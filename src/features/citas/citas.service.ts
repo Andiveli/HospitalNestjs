@@ -27,6 +27,14 @@ import {
     CITA_DURACION_MINUTOS,
     CITA_HORAS_MINIMAS_MODIFICACION,
 } from './constants/estado-cita.constants';
+import { MedicoDisponibleDto } from './dto/medico-disponible.dto';
+import { HorarioMedicoEntity } from '../horario/horario-medico.entity';
+import { ExcepcionHorarioEntity } from '../horario/excepcion-horario.entity';
+import {
+    DisponibilidadResponseDto,
+    SlotDisponibleDto,
+} from './dto/disponibilidad.dto';
+import { DiasAtencionResponseDto } from './dto/dias-atencion.dto';
 
 @Injectable()
 export class CitasService {
@@ -38,6 +46,10 @@ export class CitasService {
         private readonly medicoRepository: Repository<MedicoEntity>,
         @InjectRepository(EstadoCitaEntity)
         private readonly estadoCitaRepository: Repository<EstadoCitaEntity>,
+        @InjectRepository(HorarioMedicoEntity)
+        private readonly horarioMedicoRepository: Repository<HorarioMedicoEntity>,
+        @InjectRepository(ExcepcionHorarioEntity)
+        private readonly excepcionHorarioRepository: Repository<ExcepcionHorarioEntity>,
     ) {}
 
     /**
@@ -474,5 +486,246 @@ export class CitasService {
             tieneReceta: false, // TODO: Implementar cuando exista el módulo de recetas
             tieneDerivaciones: false, // TODO: Implementar cuando exista el módulo de derivaciones
         };
+    }
+
+    /**
+     * Obtiene la lista de médicos disponibles
+     * @param especialidadId - ID de especialidad para filtrar (opcional)
+     * @returns Lista de médicos con sus especialidades
+     */
+    async getMedicosDisponibles(
+        especialidadId?: number,
+    ): Promise<MedicoDisponibleDto[]> {
+        const queryBuilder = this.medicoRepository
+            .createQueryBuilder('medico')
+            .innerJoinAndSelect('medico.persona', 'persona')
+            .leftJoinAndSelect('medico.especialidades', 'especialidad');
+
+        if (especialidadId) {
+            queryBuilder.andWhere('especialidad.id = :especialidadId', {
+                especialidadId,
+            });
+        }
+
+        queryBuilder.orderBy('persona.primerApellido', 'ASC');
+
+        const medicos = await queryBuilder.getMany();
+
+        return medicos.map((medico) => this.mapToMedicoDisponibleDto(medico));
+    }
+
+    /**
+     * Obtiene los días de atención de un médico
+     * @param medicoId - ID del médico
+     * @returns Lista de días de la semana en que atiende
+     */
+    async getDiasAtencion(medicoId: number): Promise<DiasAtencionResponseDto> {
+        // 1. Validar que el médico existe
+        const medico = await this.medicoRepository.findOne({
+            where: { usuarioId: medicoId },
+        });
+
+        if (!medico) {
+            throw new NotFoundException(
+                `Médico con ID ${medicoId} no encontrado`,
+            );
+        }
+
+        // 2. Obtener los horarios del médico con sus días
+        const horarios = await this.horarioMedicoRepository.find({
+            where: { medico: { usuarioId: medicoId } },
+            relations: ['dia'],
+            order: { dia: { id: 'ASC' } },
+        });
+
+        // 3. Extraer los nombres de los días únicos
+        const diasAtencion = [...new Set(horarios.map((h) => h.dia.nombre))];
+
+        return { diasAtencion };
+    }
+
+    /**
+     * Mapea una entidad MedicoEntity a MedicoDisponibleDto
+     */
+    private mapToMedicoDisponibleDto(
+        medico: MedicoEntity,
+    ): MedicoDisponibleDto {
+        return {
+            id: medico.usuarioId,
+            nombre: medico.persona.primerNombre,
+            apellido: medico.persona.primerApellido,
+            especialidades: (medico.especialidades || []).map((esp) => ({
+                id: esp.id,
+                nombre: esp.nombre,
+            })),
+        };
+    }
+
+    /**
+     * Obtiene los slots disponibles de un médico para una fecha específica
+     * @param medicoId - ID del médico
+     * @param fecha - Fecha a consultar (formato YYYY-MM-DD)
+     * @returns DisponibilidadResponseDto con los slots disponibles
+     */
+    async getDisponibilidadMedico(
+        medicoId: number,
+        fecha: string,
+    ): Promise<DisponibilidadResponseDto> {
+        // 1. Validar que el médico existe
+        const medico = await this.medicoRepository.findOne({
+            where: { usuarioId: medicoId },
+        });
+
+        if (!medico) {
+            throw new NotFoundException(
+                `Médico con ID ${medicoId} no encontrado`,
+            );
+        }
+
+        // 2. Obtener el día de la semana
+        const fechaDate = new Date(fecha + 'T00:00:00');
+        const diaSemana = this.getDiaSemana(fechaDate);
+
+        // 3. Verificar si hay excepción de horario (vacaciones, etc.)
+        const excepcion = await this.excepcionHorarioRepository.findOne({
+            where: {
+                medico: { usuarioId: medicoId },
+                fecha: fechaDate,
+            },
+        });
+
+        if (excepcion) {
+            return {
+                fecha,
+                diaSemana,
+                atiende: false,
+                slots: [],
+                mensaje: excepcion.motivo || 'El médico no atiende este día',
+            };
+        }
+
+        // 4. Obtener el horario del médico para ese día
+        const horario = await this.horarioMedicoRepository.findOne({
+            where: {
+                medico: { usuarioId: medicoId },
+                dia: { nombre: diaSemana },
+            },
+            relations: ['dia'],
+        });
+
+        if (!horario) {
+            return {
+                fecha,
+                diaSemana,
+                atiende: false,
+                slots: [],
+                mensaje: `El médico no atiende los ${diaSemana.toLowerCase()}`,
+            };
+        }
+
+        // 5. Generar todos los slots posibles de 30 minutos
+        const slotsBase = this.generarSlots(
+            horario.horaInicio,
+            horario.horaFin,
+        );
+
+        // 6. Obtener citas ya agendadas para esa fecha
+        const citasAgendadas =
+            await this.citaRepository.findCitasPendientesPorMedicoYFecha(
+                medicoId,
+                fecha,
+            );
+
+        // 7. Filtrar slots ocupados
+        const horasOcupadas = citasAgendadas.map((cita) => {
+            const hora = cita.fechaHoraInicio.toTimeString().slice(0, 5);
+            return hora;
+        });
+
+        const slotsDisponibles = slotsBase.filter(
+            (slot) => !horasOcupadas.includes(slot.horaInicio),
+        );
+
+        // 8. Filtrar slots pasados si es hoy
+        const ahora = new Date();
+        const esHoy = fecha === ahora.toISOString().split('T')[0];
+
+        const slotsFiltrados = esHoy
+            ? slotsDisponibles.filter((slot) => {
+                  const [hora, minuto] = slot.horaInicio.split(':').map(Number);
+                  const slotTime = new Date(fechaDate);
+                  slotTime.setHours(hora, minuto, 0, 0);
+                  return slotTime > ahora;
+              })
+            : slotsDisponibles;
+
+        return {
+            fecha,
+            diaSemana,
+            atiende: true,
+            slots: slotsFiltrados,
+        };
+    }
+
+    /**
+     * Obtiene el nombre del día de la semana en español
+     */
+    private getDiaSemana(fecha: Date): string {
+        const dias = [
+            'Domingo',
+            'Lunes',
+            'Martes',
+            'Miércoles',
+            'Jueves',
+            'Viernes',
+            'Sábado',
+        ];
+        return dias[fecha.getDay()];
+    }
+
+    /**
+     * Genera slots de 30 minutos entre hora inicio y hora fin
+     */
+    private generarSlots(
+        horaInicio: string,
+        horaFin: string,
+    ): SlotDisponibleDto[] {
+        const slots: SlotDisponibleDto[] = [];
+        const [inicioHora, inicioMin] = horaInicio.split(':').map(Number);
+        const [finHora, finMin] = horaFin.split(':').map(Number);
+
+        let currentHora = inicioHora;
+        let currentMin = inicioMin;
+
+        while (
+            currentHora < finHora ||
+            (currentHora === finHora && currentMin < finMin)
+        ) {
+            const horaInicioSlot = `${String(currentHora).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
+
+            // Avanzar 30 minutos
+            currentMin += CITA_DURACION_MINUTOS;
+            if (currentMin >= 60) {
+                currentHora += 1;
+                currentMin -= 60;
+            }
+
+            // Verificar que no exceda la hora fin
+            if (
+                currentHora > finHora ||
+                (currentHora === finHora && currentMin > finMin)
+            ) {
+                break;
+            }
+
+            const horaFinSlot = `${String(currentHora).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
+
+            slots.push({
+                horaInicio: horaInicioSlot,
+                horaFin: horaFinSlot,
+            });
+        }
+
+        return slots;
     }
 }

@@ -9,7 +9,6 @@ import {
     Put,
     Query,
     Request,
-    UseGuards,
 } from '@nestjs/common';
 import {
     ApiBadRequestResponse,
@@ -24,7 +23,6 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import UserRequest from '../people/people.request';
 import { CitasService } from './citas.service';
 import { CreateCitaDto } from './dto/create-cita.dto';
@@ -32,13 +30,114 @@ import { UpdateCitaDto } from './dto/update-cita.dto';
 import { CitaResponseDto } from './dto/cita-response.dto';
 import { CitaDetalladaResponseDto } from './dto/cita-detallada-response.dto';
 import { PaginationDto } from './dto/pagination.dto';
+import { MedicoDisponibleDto } from './dto/medico-disponible.dto';
+import {
+    ConsultarDisponibilidadQueryDto,
+    DisponibilidadResponseDto,
+} from './dto/disponibilidad.dto';
+import { DiasAtencionResponseDto } from './dto/dias-atencion.dto';
 
-@ApiTags('citas')
+@ApiTags('Citas')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('citas')
 export class CitasController {
     constructor(private readonly citasService: CitasService) {}
+
+    @Get('medicos')
+    @ApiOperation({
+        summary: 'Listar médicos disponibles',
+        description:
+            'Obtiene la lista de médicos disponibles para agendar citas. ' +
+            'Opcionalmente se puede filtrar por especialidad.',
+    })
+    @ApiQuery({
+        name: 'especialidadId',
+        required: false,
+        type: Number,
+        description: 'ID de la especialidad para filtrar médicos',
+        example: 1,
+    })
+    @ApiOkResponse({
+        description: 'Lista de médicos obtenida exitosamente',
+        type: [MedicoDisponibleDto],
+    })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - Token JWT inválido o ausente',
+    })
+    async getMedicosDisponibles(
+        @Query('especialidadId') especialidadId?: number,
+    ): Promise<{ message: string; data: MedicoDisponibleDto[] }> {
+        const medicos =
+            await this.citasService.getMedicosDisponibles(especialidadId);
+
+        return {
+            message: 'Médicos obtenidos exitosamente',
+            data: medicos,
+        };
+    }
+
+    @Get('medicos/:medicoId/disponibilidad')
+    @ApiOperation({
+        summary: 'Obtener slots disponibles de un médico',
+        description:
+            'Obtiene los horarios disponibles de un médico para una fecha específica. ' +
+            'Devuelve slots de 30 minutos, excluyendo citas ya agendadas y excepciones.',
+    })
+    @ApiOkResponse({
+        description: 'Disponibilidad obtenida exitosamente',
+        type: DisponibilidadResponseDto,
+    })
+    @ApiNotFoundResponse({
+        description: 'Médico no encontrado',
+    })
+    @ApiBadRequestResponse({
+        description: 'Fecha inválida',
+    })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - Token JWT inválido o ausente',
+    })
+    async getDisponibilidadMedico(
+        @Param('medicoId', ParseIntPipe) medicoId: number,
+        @Query() query: ConsultarDisponibilidadQueryDto,
+    ): Promise<{ message: string; data: DisponibilidadResponseDto }> {
+        const disponibilidad = await this.citasService.getDisponibilidadMedico(
+            medicoId,
+            query.fecha,
+        );
+
+        return {
+            message: 'Disponibilidad obtenida exitosamente',
+            data: disponibilidad,
+        };
+    }
+
+    @Get('medicos/:medicoId/dias-atencion')
+    @ApiOperation({
+        summary: 'Obtener días de atención de un médico',
+        description:
+            'Devuelve los días de la semana en que el médico atiende ' +
+            '(ej: Lunes, Miércoles, Viernes).',
+    })
+    @ApiOkResponse({
+        description: 'Días de atención obtenidos exitosamente',
+        type: DiasAtencionResponseDto,
+    })
+    @ApiNotFoundResponse({
+        description: 'Médico no encontrado',
+    })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - Token JWT inválido o ausente',
+    })
+    async getDiasAtencion(
+        @Param('medicoId', ParseIntPipe) medicoId: number,
+    ): Promise<{ message: string; data: DiasAtencionResponseDto }> {
+        const diasAtencion = await this.citasService.getDiasAtencion(medicoId);
+
+        return {
+            message: 'Días de atención obtenidos exitosamente',
+            data: diasAtencion,
+        };
+    }
 
     @Post()
     @ApiOperation({
