@@ -1,13 +1,33 @@
 export interface PerfilPaciente {
-    nombres: string;
-    edad: number;
-    email: string;
-    telefono: string;
-    pais: string;
-    genero: string;
-    residencia: string;
-    sangre: string;
-    estilo: string;
-    imagen?: string;
+    info: {
+        id: number;
+        cedula: string;
+        nombres: string;
+        email: string;
+        imagen?: string;
+        verificado: boolean;
+        genero?: {
+            id: number;
+            nombre: string;
+        };
+    };
+    medico: {
+        fechaNacimiento: Date;
+        telefono: string;
+        pais?: {
+            id: number;
+            nombre: string;
+        };
+        sangre?: {
+            id: number;
+            nombre: string;
+        };
+        estiloVida?: {
+            id: number;
+            nombre: string;
+        };
+        residencia: string;
+        edad: number;
+    };
     enfermedades: Record<string, string>;
 }
