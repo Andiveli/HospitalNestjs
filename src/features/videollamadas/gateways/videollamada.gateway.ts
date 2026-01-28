@@ -82,7 +82,7 @@ export class VideoLlamadaGateway
                     const citaId = parseInt(room.replace('cita_', ''));
                     try {
                         await this.handleLeaveRoomInternal(client, citaId);
-                    } catch (_error) {
+                    } catch {
                         // Silenciar errores para no romper desconexión
                     }
                     break;
@@ -209,10 +209,10 @@ export class VideoLlamadaGateway
      * @param client - Socket del cliente que envía el offer
      */
     @SubscribeMessage('webrtc:offer')
-    async handleOffer(
+    handleOffer(
         @MessageBody() data: WebRtcSignalDto,
         @ConnectedSocket() client: Socket,
-    ): Promise<void> {
+    ): void {
         try {
             // Enviar offer solo al destinatario específico
             const payload = {
@@ -237,10 +237,10 @@ export class VideoLlamadaGateway
      * @param client - Socket del cliente que envía el answer
      */
     @SubscribeMessage('webrtc:answer')
-    async handleAnswer(
+    handleAnswer(
         @MessageBody() data: WebRtcSignalDto,
         @ConnectedSocket() client: Socket,
-    ): Promise<void> {
+    ): void {
         try {
             // Enviar answer solo al destinatario específico
             const payload = {
@@ -265,10 +265,10 @@ export class VideoLlamadaGateway
      * @param client - Socket del cliente que envía el candidato
      */
     @SubscribeMessage('webrtc:ice-candidate')
-    async handleIceCandidate(
+    handleIceCandidate(
         @MessageBody() data: WebRtcSignalDto,
         @ConnectedSocket() client: Socket,
-    ): Promise<void> {
+    ): void {
         try {
             // Enviar candidato ICE solo al destinatario específico
             const payload = {

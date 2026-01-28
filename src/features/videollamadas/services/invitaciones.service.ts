@@ -178,7 +178,9 @@ export class InvitacionesService {
             };
         } catch (error) {
             // Token expirado, inválido o malformado
-            this.logger.warn(`Token de invitado inválido: ${error}`);
+            this.logger.warn(
+                `Token de invitado inválido: ${(error as Error).message}`,
+            );
             throw new UnauthorizedException(
                 'El link de invitación es inválido o ha expirado',
             );
