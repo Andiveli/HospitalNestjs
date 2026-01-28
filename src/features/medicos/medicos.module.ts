@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CitaEntity } from '../citas/entities/cita.entity';
+import { EstadoCitaEntity } from '../citas/entities/estado-cita.entity';
 import { EspecialidadEntity } from '../especialidad/especialidad.entity';
 import { MedicoEspecialidadEntity } from '../especialidad/medico-especialidad.entity';
 import { DiaAtencionEntity } from '../horario/dia-atencion.entity';
@@ -21,6 +23,8 @@ import { MedicoRepository } from './repositories/medico.repository';
             MedicoEspecialidadEntity,
             HorarioMedicoEntity,
             DiaAtencionEntity,
+            CitaEntity,
+            EstadoCitaEntity,
         ]),
     ],
     controllers: [MedicosController],

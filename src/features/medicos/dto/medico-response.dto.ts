@@ -1,29 +1,59 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class MedicoResponseDto {
-    @ApiProperty({ description: 'Nombre completo del médico' })
+    @ApiProperty({
+        description: 'Nombre completo del médico',
+        example: 'Juan Pérez',
+    })
     nombreCompleto!: string;
 
-    @ApiProperty({ description: 'Email del médico' })
+    @ApiProperty({
+        description: 'Email del médico',
+        example: 'juan@correo.com',
+    })
     email!: string;
 
     // @ApiProperty({ description: 'Edad del médico' })
     // edad!: number;
     //
-    @ApiProperty({ description: 'Cédula del médico' })
+
+    @ApiProperty({ description: 'Cédula del médico', example: '1234567890' })
     cedula!: string;
 
-    @ApiProperty({ description: 'Licencia médica' })
+    @ApiProperty({ description: 'Licencia médica', example: 'MED-123456' })
     licenciaMedica!: string;
 
     @ApiProperty({ description: 'Pasaporte (opcional)' })
     pasaporte?: string;
 
-    @ApiProperty({ description: 'Especialidades del médico' })
+    @ApiProperty({
+        description: 'Especialidades del médico',
+        example: [
+            {
+                nombre: 'Cardiología',
+                principal: true,
+            },
+        ],
+    })
     especialidades!: EspecialidadResponseDto[];
 
-    @ApiProperty({ description: 'Horarios de atención' })
+    @ApiProperty({
+        description: 'Horarios de atención',
+        example: [
+            {
+                dia: 'Lunes',
+                horaInicio: '08:00:00',
+                horaFin: '16:00:00',
+            },
+        ],
+    })
     horarios!: HorarioResponseDto[];
+
+    @ApiProperty({
+        description: 'Cantidad de citas atendidas por el médico',
+        example: 42,
+    })
+    citasAtendidas!: number;
 }
 
 export class EspecialidadResponseDto {

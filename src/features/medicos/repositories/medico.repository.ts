@@ -1,17 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EspecialidadEntity } from 'src/features/especialidad/especialidad.entity';
+import { MedicoEspecialidadEntity } from 'src/features/especialidad/medico-especialidad.entity';
+import { DiaAtencionEntity } from 'src/features/horario/dia-atencion.entity';
+import { HorarioMedicoEntity } from 'src/features/horario/horario-medico.entity';
 import { Repository } from 'typeorm';
-import { MedicoEntity } from '../medicos.entity';
 import {
-    MedicoResponseDto,
     EspecialidadResponseDto,
     HorarioResponseDto,
+    MedicoResponseDto,
 } from '../dto/medico-response.dto';
-import { EspecialidadEntity } from '../../especialidad/especialidad.entity';
-import { MedicoEspecialidadEntity } from '../../especialidad/medico-especialidad.entity';
-import { HorarioMedicoEntity } from '../../horario/horario-medico.entity';
-import { DiaAtencionEntity } from '../../horario/dia-atencion.entity';
-// import { CommonService } from 'src/common/common.service';
+import { MedicoEntity } from '../medicos.entity';
 
 @Injectable()
 export class MedicoRepository {
@@ -55,6 +54,8 @@ export class MedicoRepository {
                 'medicoEspecialidades.especialidad',
                 'horarios',
                 'horarios.dia',
+                'citas',
+                'citas.estado',
             ],
         });
     }
@@ -155,6 +156,11 @@ export class MedicoRepository {
             where: { nombre },
         });
     }
+    countCitasAtendidas(m: MedicoEntity): number {
+        return (
+            m.citas?.filter((c) => c.estado.nombre === 'Atendidas').length || 0
+        );
+    }
 
     mapToDto(medico: MedicoEntity): MedicoResponseDto {
         const especialidadesDto: EspecialidadResponseDto[] =
@@ -181,6 +187,7 @@ export class MedicoRepository {
             pasaporte: medico.pasaporte || undefined,
             especialidades: especialidadesDto,
             horarios: horariosDto,
+            citasAtendidas: this.countCitasAtendidas(medico),
         };
     }
 }

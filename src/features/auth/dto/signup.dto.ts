@@ -67,13 +67,21 @@ export class SignupDto {
     email!: string;
 
     @ApiProperty({
-        description: 'Contraseña del usuario',
+        description:
+            'Contraseña del usuario (mínimo 8 caracteres, debe incluir mayúscula, minúscula, número y carácter especial)',
         example: 'MiPassword123!',
         minLength: 8,
         format: 'password',
     })
     @IsString()
     @IsNotEmpty({ message: 'El password es requerido' })
+    @Matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+        {
+            message:
+                'La contraseña debe tener mínimo 8 caracteres, incluir mayúscula, minúscula, número y carácter especial (@$!%*?&)',
+        },
+    )
     passwordHash!: string;
 
     @ApiProperty({

@@ -13,6 +13,7 @@ import {
     OneToOne,
     PrimaryColumn,
 } from 'typeorm';
+import { CitaEntity } from '../citas/entities/cita.entity';
 
 @Entity('medicos')
 export class MedicoEntity {
@@ -60,4 +61,7 @@ export class MedicoEntity {
 
     @OneToMany(() => ExcepcionHorarioEntity, (excepcion) => excepcion.medico)
     excepcionesHorario!: ExcepcionHorarioEntity[];
+
+    @OneToMany(() => CitaEntity, (cita) => cita.medico)
+    citas!: CitaEntity[];
 }
