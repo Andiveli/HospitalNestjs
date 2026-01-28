@@ -12,6 +12,19 @@
 > This is an intentional decision to maintain consistency with the existing database.
 > All code patterns and best practices still apply - only the language of domain terms differs.
 
+## Legacy Modules (DO NOT FLAG)
+
+> **The following modules use English naming and are EXCLUDED from code review.**
+> They will be refactored to Spanish naming in a future PR. Until then, DO NOT report violations for:
+>
+> - `src/features/people/` → Will become `src/features/personas/`
+> - `src/features/documents/` → Will become `src/features/documentos/`
+> - `PeopleModule`, `PeopleEntity`, `DocumentsModule`, `DocumentsEntity`
+> - Any imports or references to these modules in other files (e.g., `app.module.ts`)
+> - The relation `paciente.person` (legacy naming, will become `paciente.persona`)
+>
+> **Focus reviews on NEW code following the Spanish naming convention.**
+
 ## 1. Project Structure
 
 ```

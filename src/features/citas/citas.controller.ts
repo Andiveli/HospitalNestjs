@@ -36,6 +36,16 @@ import {
     DisponibilidadResponseDto,
 } from './dto/disponibilidad.dto';
 import { DiasAtencionResponseDto } from './dto/dias-atencion.dto';
+import {
+    CitaApiResponseDto,
+    CitasListApiResponseDto,
+    CitasPaginadasApiResponseDto,
+    CitaDetalladaApiResponseDto,
+    CitaCanceladaApiResponseDto,
+    MedicosDisponiblesApiResponseDto,
+    DiasAtencionApiResponseDto,
+    DisponibilidadApiResponseDto,
+} from './dto/api-responses.dto';
 
 @ApiTags('Citas')
 @ApiBearerAuth()
@@ -59,7 +69,7 @@ export class CitasController {
     })
     @ApiOkResponse({
         description: 'Lista de médicos obtenida exitosamente',
-        type: [MedicoDisponibleDto],
+        type: MedicosDisponiblesApiResponseDto,
     })
     @ApiUnauthorizedResponse({
         description: 'No autorizado - Token JWT inválido o ausente',
@@ -85,7 +95,7 @@ export class CitasController {
     })
     @ApiOkResponse({
         description: 'Disponibilidad obtenida exitosamente',
-        type: DisponibilidadResponseDto,
+        type: DisponibilidadApiResponseDto,
     })
     @ApiNotFoundResponse({
         description: 'Médico no encontrado',
@@ -120,7 +130,7 @@ export class CitasController {
     })
     @ApiOkResponse({
         description: 'Días de atención obtenidos exitosamente',
-        type: DiasAtencionResponseDto,
+        type: DiasAtencionApiResponseDto,
     })
     @ApiNotFoundResponse({
         description: 'Médico no encontrado',
@@ -150,7 +160,7 @@ export class CitasController {
     })
     @ApiCreatedResponse({
         description: 'Cita creada exitosamente',
-        type: CitaResponseDto,
+        type: CitaApiResponseDto,
     })
     @ApiBadRequestResponse({
         description: 'Datos inválidos o fecha en el pasado',
@@ -220,7 +230,7 @@ export class CitasController {
     })
     @ApiOkResponse({
         description: 'Próximas citas obtenidas exitosamente',
-        type: [CitaResponseDto],
+        type: CitasListApiResponseDto,
     })
     @ApiUnauthorizedResponse({
         description: 'No autorizado - Token JWT inválido o ausente',
@@ -246,7 +256,7 @@ export class CitasController {
     })
     @ApiOkResponse({
         description: 'Citas recientes obtenidas exitosamente',
-        type: [CitaResponseDto],
+        type: CitasListApiResponseDto,
     })
     @ApiUnauthorizedResponse({
         description: 'No autorizado - Token JWT inválido o ausente',
@@ -287,6 +297,7 @@ export class CitasController {
     })
     @ApiOkResponse({
         description: 'Citas pendientes obtenidas exitosamente',
+        type: CitasPaginadasApiResponseDto,
     })
     @ApiBadRequestResponse({
         description: 'Parámetros de paginación inválidos',
@@ -346,6 +357,7 @@ export class CitasController {
     })
     @ApiOkResponse({
         description: 'Citas atendidas obtenidas exitosamente',
+        type: CitasPaginadasApiResponseDto,
     })
     @ApiBadRequestResponse({
         description: 'Parámetros de paginación inválidos',
@@ -392,7 +404,7 @@ export class CitasController {
     })
     @ApiOkResponse({
         description: 'Cita obtenida exitosamente',
-        type: CitaDetalladaResponseDto,
+        type: CitaDetalladaApiResponseDto,
     })
     @ApiNotFoundResponse({
         description: 'Cita no encontrada',
@@ -446,7 +458,7 @@ export class CitasController {
     })
     @ApiOkResponse({
         description: 'Cita actualizada exitosamente',
-        type: CitaResponseDto,
+        type: CitaApiResponseDto,
     })
     @ApiBadRequestResponse({
         description:
@@ -523,11 +535,7 @@ export class CitasController {
     })
     @ApiOkResponse({
         description: 'Cita cancelada exitosamente',
-        schema: {
-            example: {
-                message: 'Cita del 15/2/2024 cancelada exitosamente',
-            },
-        },
+        type: CitaCanceladaApiResponseDto,
     })
     @ApiBadRequestResponse({
         description: 'Cita no es "pendiente" o faltan menos de 72 horas',

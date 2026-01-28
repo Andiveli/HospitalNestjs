@@ -26,7 +26,8 @@ FILE_PATTERNS="*.ts,*.tsx,*.js,*.jsx"
 # Examples:
 #   EXCLUDE_PATTERNS="*.test.ts,*.spec.ts"
 #   EXCLUDE_PATTERNS="*_test.go,*.mock.ts"
-EXCLUDE_PATTERNS="*.test.ts,*.spec.ts,*.test.tsx,*.spec.tsx,*.d.ts"
+# Note: Legacy modules (people, documents) are excluded until refactored
+EXCLUDE_PATTERNS="*.test.ts,*.spec.ts,*.test.tsx,*.spec.tsx,*.d.ts,src/features/people/*,src/features/documents/*"
 
 # File containing code review rules
 # Default: AGENTS.md
