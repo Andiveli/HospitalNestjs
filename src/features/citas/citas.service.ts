@@ -395,16 +395,16 @@ export class CitasService {
             );
         }
 
-        // const ahora = new Date();
-        // const horasHastaCita =
-        //     (cita.fechaHoraInicio.getTime() - ahora.getTime()) /
-        //     (1000 * 60 * 60);
-        //
-        // if (horasHastaCita < CITA_HORAS_MINIMAS_MODIFICACION) {
-        //     throw new BadRequestException(
-        //         `Solo se pueden cancelar citas con al menos ${CITA_HORAS_MINIMAS_MODIFICACION} horas de anticipación. Faltan ${Math.floor(horasHastaCita)} horas para tu cita.`,
-        //     );
-        // }
+        const ahora = new Date();
+        const horasHastaCita =
+            (cita.fechaHoraInicio.getTime() - ahora.getTime()) /
+            (1000 * 60 * 60);
+
+        if (horasHastaCita < CITA_HORAS_MINIMAS_MODIFICACION) {
+            throw new BadRequestException(
+                `Solo se pueden cancelar citas con al menos ${CITA_HORAS_MINIMAS_MODIFICACION} horas de anticipación. Faltan ${Math.floor(horasHastaCita)} horas para tu cita.`,
+            );
+        }
 
         this.logger.log(
             `Intentando cancelar cita ID ${id}, estado actual: "${cita.estado.nombre}"`,
