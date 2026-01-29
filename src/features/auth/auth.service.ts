@@ -239,7 +239,6 @@ export class AuthService {
     async obtenerPerfilesCompletos(email: string) {
         const userCached = await this.cache.get(this.cacheKey(email));
         if (userCached) {
-            console.log('Cache hit for user:', email);
             return userCached;
         }
         const user = await this.authRepository.findOne({
@@ -249,7 +248,6 @@ export class AuthService {
         if (!user) throw new NotFoundException('El usuario no existe');
         const perfil = await this.perfilContext.obtenerPerfilesCompletos(user);
         await this.cache.set(this.cacheKey(user.email), perfil);
-        console.log('Cache set for user:', user.email);
         return perfil;
     }
 

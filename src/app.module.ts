@@ -26,6 +26,7 @@ import { PermisosModule } from './features/permisos/permisos.module';
 import { RolesModule } from './features/roles/roles.module';
 import { SangreModule } from './features/sangre/sangre.module';
 import { TipoEnfermedadModule } from './features/tipo-enfermedad/tipo-enfermedad.module';
+import { VideollamadasModule } from './features/videollamadas/videollamadas.module';
 
 @Module({
     imports: [
@@ -116,6 +117,7 @@ import { TipoEnfermedadModule } from './features/tipo-enfermedad/tipo-enfermedad
         CommonModule,
         EspecialidadModule,
         HorarioModule,
+        VideollamadasModule,
     ],
 })
 export class AppModule {}

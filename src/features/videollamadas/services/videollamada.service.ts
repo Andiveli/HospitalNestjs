@@ -364,4 +364,48 @@ export class VideollamadaService {
 
         return participante;
     }
+
+    /**
+     * Guarda la URL de la grabación de una videollamada
+     * @param citaId - ID de la cita
+     * @param grabacionUrl - URL de la grabación en S3
+     * @returns Confirmación de guardado
+     */
+    async guardarGrabacion(
+        citaId: number,
+        grabacionUrl: string,
+    ): Promise<void> {
+        // 1. Verificar que la sesión existe
+        const sesion = await this.sesionRepository.findByCitaId(citaId);
+
+        if (!sesion) {
+            throw new NotFoundException(
+                `Sesión para cita ID ${citaId} no encontrada`,
+            );
+        }
+
+        // 2. Actualizar la URL de grabación
+        await this.sesionRepository.updateGrabacionUrl(citaId, grabacionUrl);
+
+        this.logger.log(
+            `Grabación guardada para cita ${citaId}: ${grabacionUrl}`,
+        );
+    }
+
+    /**
+     * Obtiene la URL de grabación de una videollamada
+     * @param citaId - ID de la cita
+     * @returns URL de grabación o null si no existe
+     */
+    async obtenerGrabacion(citaId: number): Promise<string | null> {
+        const sesion = await this.sesionRepository.findByCitaId(citaId);
+
+        if (!sesion) {
+            throw new NotFoundException(
+                `Sesión para cita ID ${citaId} no encontrada`,
+            );
+        }
+
+        return sesion.grabacionUrl;
+    }
 }

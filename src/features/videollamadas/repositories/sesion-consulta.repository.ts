@@ -163,4 +163,16 @@ export class SesionConsultaRepository {
 
         return this.findByCitaId(citaId);
     }
+
+    /**
+     * Actualiza la URL de grabación de una sesión
+     * @param citaId - ID de la cita
+     * @param grabacionUrl - URL de la grabación
+     */
+    async updateGrabacionUrl(
+        citaId: number,
+        grabacionUrl: string,
+    ): Promise<void> {
+        await this.ormRepository.update({ citaId }, { grabacionUrl });
+    }
 }

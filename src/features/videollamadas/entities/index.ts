@@ -4,3 +4,4 @@ export { RolSesionEntity } from './rol-sesion.entity';
 export { SesionConsultaEntity } from './sesion-consulta.entity';
 export { ParticipanteSesionEntity } from './participante-sesion.entity';
 export { MensajeChatEntity } from './mensaje-chat.entity';
+export { InvitacionVideollamadaEntity } from './invitacion-videollamada.entity';

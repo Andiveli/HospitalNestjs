@@ -158,7 +158,7 @@ export class CitasService {
     async getRecientesCitasAtendidas(
         pacienteId: number,
     ): Promise<CitaResponseDto[]> {
-        const citas = await this.citaRepository.findRecientesCitasAtendidas(
+        const citas = await this.citaRepository.findRecientesCitas(
             pacienteId,
             4,
         );
@@ -377,40 +377,35 @@ export class CitasService {
         id: number,
         pacienteId: number,
     ): Promise<{ message: string }> {
-        // 1. Verificar que la cita existe
         const cita = await this.citaRepository.findById(id);
 
         if (!cita) {
             throw new NotFoundException(`Cita con ID ${id} no encontrada`);
         }
 
-        // 2. Verificar que la cita pertenece al paciente
         if (cita.paciente.usuarioId !== pacienteId) {
             throw new ForbiddenException(
                 'No tienes permiso para cancelar esta cita',
             );
         }
 
-        // 3. Verificar que la cita está en estado "pendiente"
         if (cita.estado.nombre !== EstadoCita.PENDIENTE) {
             throw new BadRequestException(
                 `Solo se pueden cancelar citas con estado "pendiente". Estado actual: ${cita.estado.nombre}`,
             );
         }
 
-        // 4. Verificar regla de 72 horas
-        const ahora = new Date();
-        const horasHastaCita =
-            (cita.fechaHoraInicio.getTime() - ahora.getTime()) /
-            (1000 * 60 * 60);
+        // const ahora = new Date();
+        // const horasHastaCita =
+        //     (cita.fechaHoraInicio.getTime() - ahora.getTime()) /
+        //     (1000 * 60 * 60);
+        //
+        // if (horasHastaCita < CITA_HORAS_MINIMAS_MODIFICACION) {
+        //     throw new BadRequestException(
+        //         `Solo se pueden cancelar citas con al menos ${CITA_HORAS_MINIMAS_MODIFICACION} horas de anticipación. Faltan ${Math.floor(horasHastaCita)} horas para tu cita.`,
+        //     );
+        // }
 
-        if (horasHastaCita < CITA_HORAS_MINIMAS_MODIFICACION) {
-            throw new BadRequestException(
-                `Solo se pueden cancelar citas con al menos ${CITA_HORAS_MINIMAS_MODIFICACION} horas de anticipación. Faltan ${Math.floor(horasHastaCita)} horas para tu cita.`,
-            );
-        }
-
-        // 5. Cambiar estado a "cancelada" (soft delete)
         this.logger.log(
             `Intentando cancelar cita ID ${id}, estado actual: "${cita.estado.nombre}"`,
         );

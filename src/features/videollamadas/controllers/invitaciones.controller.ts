@@ -26,7 +26,7 @@ import { GenerarInvitacionDto } from '../dto/generar-invitacion.dto';
 import {
     GenerarLinkResponse,
     InvitacionesService,
-    ValidarTokenResponse,
+    ValidarCodigoResponse,
 } from '../services/invitaciones.service';
 import UserRequest from 'src/features/people/people.request';
 
@@ -34,15 +34,15 @@ import UserRequest from 'src/features/people/people.request';
  * Controller para manejar invitaciones a videollamadas
  *
  * Permite generar links de invitación para acompañantes/invitados
- * y validar tokens de acceso a videollamadas.
+ * y validar códigos de acceso a videollamadas.
  *
  * Endpoints:
  * - POST /citas/:id/generar-link-invitado - Generar link de invitación
- * - GET /citas/invitado/:token - Validar token de invitado
+ * - GET /invitaciones/invitado/:codigo - Validar código de invitado
  */
 @ApiTags('Invitaciones a Videollamadas')
 @ApiBearerAuth()
-@Controller('citas')
+@Controller('invitaciones')
 export class InvitacionesController {
     private readonly logger = new Logger(InvitacionesController.name);
 
@@ -57,14 +57,14 @@ export class InvitacionesController {
      * @param id - ID de la cita
      * @param generarInvitacionDto - Datos del invitado
      * @param req - Request con usuario autenticado
-     * @returns Link de invitación y token JWT
+     * @returns Link de invitación y código de acceso
      */
     @Post(':id/generar-link-invitado')
     @UseGuards(JwtAuthGuard)
     @ApiOperation({
         summary: 'Generar link de invitación para videollamada',
         description: `
-        Genera un link de invitación con token JWT para que un invitado pueda unirse a la videollamada.
+        Genera un link de invitación con código de acceso para que un invitado pueda unirse a la videollamada.
         Solo el médico o paciente de la cita pueden generar invitaciones.
         El link es válido por 24 horas.
 
@@ -114,15 +114,15 @@ export class InvitacionesController {
                         linkInvitacion: {
                             type: 'string',
                             example:
-                                'http://localhost:3000/videollamada/invitado/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+                                'http://localhost:3000/videollamada/invitado/ABC123XY',
                             description:
                                 'URL completa para compartir con el invitado',
                         },
-                        token: {
+                        codigoAcceso: {
                             type: 'string',
-                            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+                            example: 'ABC123XY',
                             description:
-                                'Token JWT (si el frontend necesita usarlo separado)',
+                                'Código de acceso único (8 caracteres alfanuméricos)',
                         },
                         expiraEn: {
                             type: 'string',
@@ -138,7 +138,7 @@ export class InvitacionesController {
         description: 'Datos inválidos o mala solicitud',
     })
     @ApiUnauthorizedResponse({
-        description: 'No autorizado - token JWT inválido',
+        description: 'No autorizado - requiere autenticación',
     })
     @ApiForbiddenResponse({
         description:
@@ -181,32 +181,32 @@ export class InvitacionesController {
     }
 
     /**
-     * Valida un token de invitación y retorna información de la sesión
+     * Valida un código de acceso y retorna información de la sesión
      *
      * Este endpoint es público (no requiere autenticación) porque los invitados
      * no tienen cuenta en el sistema.
      *
-     * @param token - Token JWT del link de invitación
-     * @returns Información de la sesión y validación del token
+     * @param codigo - Código de acceso de la invitación
+     * @returns Información de la sesión y validación del código
      */
-    @Get('invitado/:token')
+    @Get('invitado/:codigo')
     @ApiOperation({
-        summary: 'Validar token de invitación',
+        summary: 'Validar código de invitación',
         description: `
-        Valida un token JWT de invitación y retorna la información de la sesión de videollamada.
+        Valida un código de acceso de invitación y retorna la información de la sesión de videollamada.
         Este endpoint es público (no requiere autenticación) ya que los invitados no tienen cuenta.
         
         **Use cases:**
-        - El invitado accede al link y el frontend valida el token
+        - El invitado accede al link y el frontend valida el código
         - El frontend obtiene información de la sesión para mostrar la UI correcta
         - Verificación de que la cita aún existe y no está cancelada
         `,
     })
     @ApiParam({
-        name: 'token',
+        name: 'codigo',
         type: 'string',
-        description: 'Token JWT del link de invitación',
-        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        description: 'Código de acceso de la invitación',
+        example: 'ABC123XY',
     })
     @ApiOkResponse({
         description: 'Token válido - información de la sesión',
@@ -267,21 +267,21 @@ export class InvitacionesController {
         },
     })
     @ApiUnauthorizedResponse({
-        description: 'Token inválido, expirado o malformado',
+        description: 'Código de acceso inválido o malformado',
         schema: {
             type: 'object',
             properties: {
                 statusCode: {
                     type: 'number',
-                    example: 401,
+                    example: 404,
                 },
                 message: {
                     type: 'string',
-                    example: 'El link de invitación es inválido o ha expirado',
+                    example: 'Código de acceso inválido o no encontrado',
                 },
                 error: {
                     type: 'string',
-                    example: 'Unauthorized',
+                    example: 'Not Found',
                 },
             },
         },
@@ -292,22 +292,22 @@ export class InvitacionesController {
     @ApiNotFoundResponse({
         description: 'La cita asociada ya no existe',
     })
-    async validarTokenInvitado(
-        @Param('token') token: string,
-    ): Promise<{ message: string; data: ValidarTokenResponse }> {
+    async validarCodigoInvitado(
+        @Param('codigo') codigo: string,
+    ): Promise<{ message: string; data: ValidarCodigoResponse }> {
         try {
-            const tokenResponse =
-                await this.invitacionesService.validarTokenInvitado(token);
+            const codigoResponse =
+                await this.invitacionesService.validarCodigoInvitado(codigo);
 
-            this.logger.log(`Token de invitado validado exitosamente`);
+            this.logger.log(`Código de invitado validado exitosamente`);
 
             return {
-                message: 'Token válido',
-                data: tokenResponse,
+                message: 'Código válido',
+                data: codigoResponse,
             };
         } catch (error) {
             this.logger.error(
-                `Error al validar token de invitado: ${(error as Error).message}`,
+                `Error al validar código de invitado: ${(error as Error).message}`,
             );
             throw error;
         }

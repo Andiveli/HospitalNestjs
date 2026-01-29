@@ -1,7 +1,6 @@
 export { VideollamadaService } from './videollamada.service';
 export {
     InvitacionesService,
-    InvitadoTokenPayload,
     GenerarLinkResponse,
-    ValidarTokenResponse,
+    ValidarCodigoResponse,
 } from './invitaciones.service';

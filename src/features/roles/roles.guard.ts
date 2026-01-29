@@ -14,8 +14,6 @@ export class RolesGuard implements CanActivate {
             ROLES_KEY,
             [context.getHandler(), context.getClass()],
         );
-        console.log('🔍 Required roles:', requiredRoles);
-
         if (!requiredRoles) {
             return true;
         }
@@ -26,14 +24,9 @@ export class RolesGuard implements CanActivate {
             );
         }
         const user = request.user as UserRequest['user'];
-        console.log('👤 User roles:', user.roles);
-        console.log('🔍 First role type:', typeof user.roles?.[0]);
-
         const hasAccess = requiredRoles.some((rol) =>
             user.roles?.includes(rol),
         );
-        console.log('✅ Has access:', hasAccess);
-
         return hasAccess;
     }
 }

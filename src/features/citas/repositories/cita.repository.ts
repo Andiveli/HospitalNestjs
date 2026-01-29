@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan, Not, Between } from 'typeorm';
+import { Repository, MoreThan, Not, Between, In } from 'typeorm';
 import { CitaEntity } from '../entities/cita.entity';
 import { EstadoCitaEntity } from '../entities/estado-cita.entity';
 import { EstadoCita } from '../constants/estado-cita.constants';
@@ -114,14 +114,16 @@ export class CitaRepository {
      * @param limit - Cantidad de citas a devolver
      * @returns Array de citas atendidas ordenadas por fecha descendente
      */
-    async findRecientesCitasAtendidas(
+    async findRecientesCitas(
         pacienteId: number,
         limit: number,
     ): Promise<CitaEntity[]> {
         return this.ormRepository.find({
             where: {
                 paciente: { usuarioId: pacienteId },
-                estado: { nombre: EstadoCita.ATENDIDA },
+                estado: {
+                    nombre: In([EstadoCita.ATENDIDA, EstadoCita.CANCELADA]),
+                },
             },
             relations: [
                 'estado',

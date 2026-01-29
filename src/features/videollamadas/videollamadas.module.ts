@@ -1,37 +1,27 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
-// Entities
-import {
-    SesionConsultaEntity,
-    ParticipanteSesionEntity,
-    MensajeChatEntity,
-    EstadoSesionEntity,
-    RolSesionEntity,
-    TipoMensajeEntity,
-} from './entities';
-import { CitaEntity } from '../citas/entities/cita.entity';
-
-// Repositories
-import {
-    SesionConsultaRepository,
-    ParticipanteSesionRepository,
-    MensajeChatRepository,
-} from './repositories';
-
-// Services
-import { VideollamadaService, InvitacionesService } from './services';
-
-// Controllers
-import { InvitacionesController } from './controllers';
-
-// Gateways
-import { VideoLlamadaGateway } from './gateways';
-
-// Other modules dependencies
 import { AuthModule } from '../auth/auth.module';
 import { CitasModule } from '../citas/citas.module';
+import { CitaEntity } from '../citas/entities/cita.entity';
 import { PeopleModule } from '../people/people.module';
+import { InvitacionesController, VideoRoomsController } from './controllers';
+import {
+    EstadoSesionEntity,
+    InvitacionVideollamadaEntity,
+    MensajeChatEntity,
+    ParticipanteSesionEntity,
+    RolSesionEntity,
+    SesionConsultaEntity,
+    TipoMensajeEntity,
+} from './entities';
+import { VideoLlamadaGateway } from './gateways';
+import {
+    InvitacionVideollamadaRepository,
+    MensajeChatRepository,
+    ParticipanteSesionRepository,
+    SesionConsultaRepository,
+} from './repositories';
+import { InvitacionesService, VideollamadaService } from './services';
 
 /**
  * Módulo principal de videollamadas
@@ -41,18 +31,16 @@ import { PeopleModule } from '../people/people.module';
  * - Gestión de participantes (incluidos invitados)
  * - Chat en tiempo real
  * - Señalización WebRTC
- * - Invitaciones con tokens JWT
+ * - Invitaciones con códigos de acceso (sin necesidad de cuenta)
  *
  * Dependencias externas:
  * - TypeORM para persistencia
  * - Socket.io para comunicación en tiempo real
- * - JWT para tokens de invitación
  * - CitaModule para validación de citas
  * - AuthModule para seguridad
  */
 @Module({
     imports: [
-        // TypeORM entities para este módulo
         TypeOrmModule.forFeature([
             SesionConsultaEntity,
             ParticipanteSesionEntity,
@@ -60,42 +48,33 @@ import { PeopleModule } from '../people/people.module';
             EstadoSesionEntity,
             RolSesionEntity,
             TipoMensajeEntity,
-            CitaEntity, // Necesitamos validar citas
+            InvitacionVideollamadaEntity,
+            CitaEntity,
         ]),
-
-        // Módulos externos
         AuthModule,
         CitasModule,
         PeopleModule,
     ],
 
-    controllers: [InvitacionesController],
+    controllers: [InvitacionesController, VideoRoomsController],
 
     providers: [
-        // Repositories
         SesionConsultaRepository,
         ParticipanteSesionRepository,
         MensajeChatRepository,
-
-        // Services
+        InvitacionVideollamadaRepository,
         VideollamadaService,
         InvitacionesService,
-
-        // Gateways
         VideoLlamadaGateway,
     ],
 
     exports: [
-        // Exportar services para que otros módulos puedan usarlos
         VideollamadaService,
         InvitacionesService,
-
-        // Exportar repositories para testing o módulos internos
         SesionConsultaRepository,
         ParticipanteSesionRepository,
         MensajeChatRepository,
-
-        // Exportar gateway si se necesita desde otro lado
+        InvitacionVideollamadaRepository,
         VideoLlamadaGateway,
     ],
 })

@@ -1,42 +1,28 @@
 import {
     Injectable,
     NotFoundException,
-    UnauthorizedException,
     ForbiddenException,
     Logger,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CitaEntity } from '../../citas/entities/cita.entity';
-import { randomBytes } from 'crypto';
-
-/**
- * Payload del token JWT para invitados
- */
-export interface InvitadoTokenPayload {
-    citaId: number;
-    invitadoPor: number; // usuarioId del médico/paciente que invita
-    nombreInvitado: string;
-    rolInvitado: string; // "invitado" o "acompanante"
-    tokenAcceso: string; // Token único para este participante
-    iat?: number; // Issued at (timestamp)
-    exp?: number; // Expiration (timestamp)
-}
+import { InvitacionVideollamadaRepository } from '../repositories';
+import { InvitacionVideollamadaEntity } from '../entities';
 
 /**
  * DTO de respuesta al generar link de invitado
  */
 export interface GenerarLinkResponse {
     linkInvitacion: string;
-    token: string;
+    codigoAcceso: string;
     expiraEn: string;
 }
 
 /**
- * DTO de respuesta al validar token de invitado
+ * DTO de respuesta al validar código de acceso
  */
-export interface ValidarTokenResponse {
+export interface ValidarCodigoResponse {
     valido: boolean;
     citaId: number;
     nombreSesion: string;
@@ -52,9 +38,9 @@ export class InvitacionesService {
     private readonly logger = new Logger(InvitacionesService.name);
 
     constructor(
-        private readonly jwtService: JwtService,
         @InjectRepository(CitaEntity)
         private readonly citaRepository: Repository<CitaEntity>,
+        private readonly invitacionRepository: InvitacionVideollamadaRepository,
     ) {}
 
     /**
@@ -63,7 +49,7 @@ export class InvitacionesService {
      * @param usuarioId - ID del usuario que genera el link (médico o paciente)
      * @param nombreInvitado - Nombre del invitado
      * @param rolInvitado - Rol del invitado (por defecto "invitado")
-     * @returns Link de invitación y token JWT
+     * @returns Link de invitación y código de acceso
      */
     async generarLinkInvitado(
         citaId: number,
@@ -96,94 +82,110 @@ export class InvitacionesService {
             );
         }
 
-        // 3. Generar token de acceso único para este participante
-        const tokenAcceso = this.generarTokenAcceso();
+        // 3. Calcular fecha de expiración (24 horas)
+        const fechaHoraExpiracion = new Date();
+        fechaHoraExpiracion.setHours(fechaHoraExpiracion.getHours() + 24);
 
-        // 4. Crear payload del JWT
-        const payload: InvitadoTokenPayload = {
+        // 4. Crear invitación en la base de datos
+        const invitacion = await this.invitacionRepository.crearInvitacion(
             citaId,
-            invitadoPor: usuarioId,
+            usuarioId,
             nombreInvitado,
             rolInvitado,
-            tokenAcceso,
-        };
+            fechaHoraExpiracion,
+        );
 
-        // 5. Firmar el token JWT con expiración de 24 horas
-        const token = this.jwtService.sign(payload, {
-            expiresIn: '24h',
-        });
-
-        // 6. Construir el link de invitación
+        // 5. Construir el link de invitación
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        const linkInvitacion = `${frontendUrl}/videollamada/invitado/${token}`;
+        const linkInvitacion = `${frontendUrl}/videollamada/invitado/${invitacion.codigoAcceso}`;
 
         this.logger.log(
-            `Link de invitación generado para cita ${citaId} por usuario ${usuarioId}`,
+            `Link de invitación generado para cita ${citaId} por usuario ${usuarioId} con código ${invitacion.codigoAcceso}`,
         );
 
         return {
             linkInvitacion,
-            token,
+            codigoAcceso: invitacion.codigoAcceso,
             expiraEn: '24 horas',
         };
     }
 
     /**
-     * Valida un token de invitado y retorna la información de la sesión
-     * @param token - Token JWT del invitado
-     * @returns Información de la sesión si el token es válido
+     * Valida un código de acceso y retorna la información de la sesión
+     * @param codigoAcceso - Código de acceso del invitado
+     * @returns Información de la sesión si el código es válido
      */
-    async validarTokenInvitado(token: string): Promise<ValidarTokenResponse> {
+    async validarCodigoInvitado(
+        codigoAcceso: string,
+    ): Promise<ValidarCodigoResponse> {
         try {
-            // 1. Verificar y decodificar el token JWT
-            const payload = this.jwtService.verify<InvitadoTokenPayload>(token);
+            // 1. Buscar la invitación por código
+            const invitacion =
+                await this.invitacionRepository.buscarPorCodigoAcceso(
+                    codigoAcceso,
+                );
 
-            // 2. Verificar que la cita todavía existe
-            const cita = await this.citaRepository.findOne({
-                where: { id: payload.citaId },
-                relations: [
-                    'medico',
-                    'medico.persona',
-                    'paciente',
-                    'paciente.person',
-                    'estado',
-                ],
-            });
+            if (!invitacion) {
+                throw new NotFoundException('Código de acceso inválido');
+            }
 
-            if (!cita) {
+            // 2. Verificar que la invitación esté activa y no haya sido usada
+            if (!invitacion.activo) {
+                throw new ForbiddenException(
+                    'El código de acceso ha sido desactivado',
+                );
+            }
+
+            if (invitacion.usado) {
+                throw new ForbiddenException(
+                    'Este código de acceso ya fue utilizado',
+                );
+            }
+
+            // 3. Verificar que no haya expirado
+            const ahora = new Date();
+            if (invitacion.fechaHoraExpiracion < ahora) {
+                throw new ForbiddenException('El código de acceso ha expirado');
+            }
+
+            // 4. Verificar que la cita todavía existe y no esté cancelada
+            if (!invitacion.cita) {
                 throw new NotFoundException(
                     'La cita asociada a esta invitación ya no existe',
                 );
             }
 
-            // 3. Verificar que la cita no esté cancelada
-            if (cita.estado.nombre === 'cancelada') {
+            if (invitacion.cita.estado.nombre === 'cancelada') {
                 throw new ForbiddenException('Esta cita ha sido cancelada');
             }
 
-            // 4. Construir respuesta con información de la sesión
-            const nombreMedico = `${cita.medico.persona.primerNombre} ${cita.medico.persona.primerApellido}`;
-            const nombrePaciente = `${cita.paciente.person.primerNombre} ${cita.paciente.person.primerApellido}`;
+            // 5. Marcar como usada la primera vez que se accede
+            await this.invitacionRepository.marcarComoUsada(invitacion.id);
+
+            // 6. Construir respuesta con información de la sesión
+            const nombreMedico = `${invitacion.cita.medico.persona.primerNombre} ${invitacion.cita.medico.persona.primerApellido}`;
+            const nombrePaciente = `${invitacion.cita.paciente.person.primerNombre} ${invitacion.cita.paciente.person.primerApellido}`;
             const nombreSesion = `Consulta - ${nombreMedico} / ${nombrePaciente}`;
+
+            this.logger.log(
+                `Código de acceso ${codigoAcceso} validado exitosamente para cita ${invitacion.citaId}`,
+            );
 
             return {
                 valido: true,
-                citaId: payload.citaId,
+                citaId: invitacion.citaId,
                 nombreSesion,
                 nombreMedico,
                 nombrePaciente,
-                fechaHoraInicio: cita.fechaHoraInicio,
-                nombreInvitado: payload.nombreInvitado,
-                rolInvitado: payload.rolInvitado,
+                fechaHoraInicio: invitacion.cita.fechaHoraInicio,
+                nombreInvitado: invitacion.nombreInvitado,
+                rolInvitado: invitacion.rolInvitado,
             };
         } catch (error) {
-            // Token expirado, inválido o malformado
             this.logger.warn(
-                `Token de invitado inválido: ${(error as Error).message}`,
+                `Error al validar código de acceso ${codigoAcceso}: ${(error as Error).message}`,
             );
-            throw new UnauthorizedException(
-                'El link de invitación es inválido o ha expirado',
-            );
+            throw error;
         }
     }
 
@@ -213,10 +215,22 @@ export class InvitacionesService {
     }
 
     /**
-     * Genera un token de acceso único para un participante
-     * @returns Token aleatorio de 32 caracteres
+     * Obtiene las invitaciones generadas para una cita
+     * @param citaId - ID de la cita
+     * @returns Lista de invitaciones de la cita
      */
-    private generarTokenAcceso(): string {
-        return randomBytes(32).toString('hex');
+    async obtenerInvitacionesPorCita(
+        citaId: number,
+    ): Promise<InvitacionVideollamadaEntity[]> {
+        return await this.invitacionRepository.buscarPorCita(citaId);
+    }
+
+    /**
+     * Limpia las invitaciones expiradas
+     * Este método debería ser llamado periódicamente (ej: cada hora)
+     */
+    async limpiarInvitacionesExpiradas(): Promise<void> {
+        await this.invitacionRepository.limpiarExpiradas();
+        this.logger.log('Invitaciones expiradas limpiadas exitosamente');
     }
 }
