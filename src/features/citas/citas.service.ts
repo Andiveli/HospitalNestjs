@@ -1,40 +1,40 @@
 import {
-    Injectable,
-    NotFoundException,
     BadRequestException,
-    ForbiddenException,
     ConflictException,
+    ForbiddenException,
+    Injectable,
     Logger,
+    NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CitaRepository } from './repositories/cita.repository';
+import { ExcepcionHorarioEntity } from '../horario/excepcion-horario.entity';
+import { HorarioMedicoEntity } from '../horario/horario-medico.entity';
 import { MedicoEntity } from '../medicos/medicos.entity';
-import { EstadoCitaEntity } from './entities/estado-cita.entity';
-import { CreateCitaDto } from './dto/create-cita.dto';
-import { UpdateCitaDto } from './dto/update-cita.dto';
+import { PacientesEntity } from '../pacientes/pacientes.entity';
+import {
+    CITA_DURACION_MINUTOS,
+    CITA_HORAS_MINIMAS_MODIFICACION,
+    EstadoCita,
+} from './constants/estado-cita.constants';
+import { CitaDetalladaResponseDto } from './dto/cita-detallada-response.dto';
 import {
     CitaResponseDto,
     MedicoInfo,
     PacienteInfo,
 } from './dto/cita-response.dto';
-import { CitaDetalladaResponseDto } from './dto/cita-detallada-response.dto';
-import { PaginatedResponseDto } from './dto/pagination.dto';
-import { CitaEntity } from './entities/cita.entity';
-import { PacientesEntity } from '../pacientes/pacientes.entity';
-import {
-    EstadoCita,
-    CITA_DURACION_MINUTOS,
-    CITA_HORAS_MINIMAS_MODIFICACION,
-} from './constants/estado-cita.constants';
-import { MedicoDisponibleDto } from './dto/medico-disponible.dto';
-import { HorarioMedicoEntity } from '../horario/horario-medico.entity';
-import { ExcepcionHorarioEntity } from '../horario/excepcion-horario.entity';
+import { CreateCitaDto } from './dto/create-cita.dto';
+import { DiasAtencionResponseDto } from './dto/dias-atencion.dto';
 import {
     DisponibilidadResponseDto,
     SlotDisponibleDto,
 } from './dto/disponibilidad.dto';
-import { DiasAtencionResponseDto } from './dto/dias-atencion.dto';
+import { MedicoDisponibleDto } from './dto/medico-disponible.dto';
+import { PaginatedResponseDto } from './dto/pagination.dto';
+import { UpdateCitaDto } from './dto/update-cita.dto';
+import { CitaEntity } from './entities/cita.entity';
+import { EstadoCitaEntity } from './entities/estado-cita.entity';
+import { CitaRepository } from './repositories/cita.repository';
 
 @Injectable()
 export class CitasService {
@@ -64,7 +64,6 @@ export class CitasService {
     ): Promise<CitaResponseDto> {
         const { medicoId, fechaHoraInicio, telefonica } = createCitaDto;
 
-        // 1. Validar que el médico existe
         const medico = await this.medicoRepository.findOne({
             where: { usuarioId: medicoId },
             relations: ['persona', 'especialidades'],
@@ -76,12 +75,10 @@ export class CitasService {
             );
         }
 
-        // 2. Calcular fecha de fin (+30 minutos)
         const fechaInicio = new Date(fechaHoraInicio);
         const fechaFin = new Date(fechaInicio);
         fechaFin.setMinutes(fechaFin.getMinutes() + CITA_DURACION_MINUTOS);
 
-        // 3. Validar que la fecha es futura
         const ahora = new Date();
         if (fechaInicio <= ahora) {
             throw new BadRequestException(
@@ -89,7 +86,6 @@ export class CitasService {
             );
         }
 
-        // 4. Validar que no haya conflictos de horario con el médico
         const hayConflicto =
             await this.citaRepository.verificarConflictoHorario(
                 medicoId,
@@ -103,7 +99,6 @@ export class CitasService {
             );
         }
 
-        // 5. Obtener el estado "pendiente"
         const estadoPendiente = await this.estadoCitaRepository.findOne({
             where: { nombre: EstadoCita.PENDIENTE },
         });
@@ -114,7 +109,6 @@ export class CitasService {
             );
         }
 
-        // 6. Crear la cita
         const citaData: Partial<CitaEntity> = {
             medico: { usuarioId: medicoId } as MedicoEntity,
             paciente: { usuarioId: pacienteId } as PacientesEntity,
@@ -127,7 +121,6 @@ export class CitasService {
 
         const citaGuardada = await this.citaRepository.create(citaData);
 
-        // 7. Mapear a DTO de respuesta
         return this.mapToResponseDto(citaGuardada);
     }
 
@@ -142,7 +135,6 @@ export class CitasService {
             3,
         );
 
-        // Defensivo: retornar array vacío si no hay resultados
         if (!citas || citas.length === 0) {
             return [];
         }
@@ -163,7 +155,6 @@ export class CitasService {
             4,
         );
 
-        // Defensivo: retornar array vacío si no hay resultados
         if (!citas || citas.length === 0) {
             return [];
         }
@@ -190,7 +181,6 @@ export class CitasService {
                 limit,
             );
 
-        // Defensivo: manejar array vacío
         const data =
             citas && citas.length > 0
                 ? citas.map((cita) => this.mapToResponseDto(cita))
@@ -226,7 +216,6 @@ export class CitasService {
                 limit,
             );
 
-        // Defensivo: manejar array vacío
         const data =
             citas && citas.length > 0
                 ? citas.map((cita) => this.mapToResponseDto(cita))
@@ -259,7 +248,6 @@ export class CitasService {
             throw new NotFoundException(`Cita con ID ${id} no encontrada`);
         }
 
-        // Validar que la cita pertenece al paciente autenticado
         if (cita.paciente.usuarioId !== pacienteId) {
             throw new ForbiddenException(
                 'No tienes permiso para acceder a esta cita',
@@ -281,28 +269,24 @@ export class CitasService {
         updateCitaDto: UpdateCitaDto,
         pacienteId: number,
     ): Promise<CitaResponseDto> {
-        // 1. Verificar que la cita existe
         const cita = await this.citaRepository.findById(id);
 
         if (!cita) {
             throw new NotFoundException(`Cita con ID ${id} no encontrada`);
         }
 
-        // 2. Verificar que la cita pertenece al paciente
         if (cita.paciente.usuarioId !== pacienteId) {
             throw new ForbiddenException(
                 'No tienes permiso para modificar esta cita',
             );
         }
 
-        // 3. Verificar que la cita está en estado "pendiente"
         if (cita.estado.nombre !== EstadoCita.PENDIENTE) {
             throw new BadRequestException(
                 `Solo se pueden modificar citas con estado "pendiente". Estado actual: ${cita.estado.nombre}`,
             );
         }
 
-        // 4. Verificar regla de 72 horas
         const ahora = new Date();
         const horasHastaCita =
             (cita.fechaHoraInicio.getTime() - ahora.getTime()) /
@@ -314,14 +298,12 @@ export class CitasService {
             );
         }
 
-        // 5. Validar que se proporcionó nueva fecha
         if (!updateCitaDto.fechaHoraInicio) {
             throw new BadRequestException(
                 'Debes proporcionar una nueva fecha y hora para la cita',
             );
         }
 
-        // 6. Validar nueva fecha
         const nuevaFechaInicio = new Date(updateCitaDto.fechaHoraInicio);
         if (nuevaFechaInicio <= ahora) {
             throw new BadRequestException(
@@ -329,13 +311,11 @@ export class CitasService {
             );
         }
 
-        // 7. Calcular nueva fecha de fin
         const nuevaFechaFin = new Date(nuevaFechaInicio);
         nuevaFechaFin.setMinutes(
             nuevaFechaFin.getMinutes() + CITA_DURACION_MINUTOS,
         );
 
-        // 8. Verificar conflictos de horario con el médico
         const hayConflicto =
             await this.citaRepository.verificarConflictoHorario(
                 cita.medico.usuarioId,
@@ -350,7 +330,6 @@ export class CitasService {
             );
         }
 
-        // 9. Actualizar la cita
         const citaActualizada = await this.citaRepository.update(id, {
             fechaHoraInicio: nuevaFechaInicio,
             fechaHoraFin: nuevaFechaFin,
@@ -515,7 +494,6 @@ export class CitasService {
      * @returns Lista de días de la semana en que atiende
      */
     async getDiasAtencion(medicoId: number): Promise<DiasAtencionResponseDto> {
-        // 1. Validar que el médico existe
         const medico = await this.medicoRepository.findOne({
             where: { usuarioId: medicoId },
         });
@@ -526,14 +504,12 @@ export class CitasService {
             );
         }
 
-        // 2. Obtener los horarios del médico con sus días
         const horarios = await this.horarioMedicoRepository.find({
             where: { medico: { usuarioId: medicoId } },
             relations: ['dia'],
             order: { dia: { id: 'ASC' } },
         });
 
-        // 3. Extraer los nombres de los días únicos
         const diasAtencion = [...new Set(horarios.map((h) => h.dia.nombre))];
 
         return { diasAtencion };
@@ -566,7 +542,6 @@ export class CitasService {
         medicoId: number,
         fecha: string,
     ): Promise<DisponibilidadResponseDto> {
-        // 1. Validar que el médico existe
         const medico = await this.medicoRepository.findOne({
             where: { usuarioId: medicoId },
         });
@@ -577,11 +552,9 @@ export class CitasService {
             );
         }
 
-        // 2. Obtener el día de la semana
         const fechaDate = new Date(fecha + 'T00:00:00');
         const diaSemana = this.getDiaSemana(fechaDate);
 
-        // 3. Verificar si hay excepción de horario (vacaciones, etc.)
         const excepcion = await this.excepcionHorarioRepository.findOne({
             where: {
                 medico: { usuarioId: medicoId },
@@ -599,7 +572,6 @@ export class CitasService {
             };
         }
 
-        // 4. Obtener el horario del médico para ese día
         const horario = await this.horarioMedicoRepository.findOne({
             where: {
                 medico: { usuarioId: medicoId },
@@ -618,20 +590,17 @@ export class CitasService {
             };
         }
 
-        // 5. Generar todos los slots posibles de 30 minutos
         const slotsBase = this.generarSlots(
             horario.horaInicio,
             horario.horaFin,
         );
 
-        // 6. Obtener citas ya agendadas para esa fecha
         const citasAgendadas =
             await this.citaRepository.findCitasPendientesPorMedicoYFecha(
                 medicoId,
                 fecha,
             );
 
-        // 7. Filtrar slots ocupados
         const horasOcupadas = citasAgendadas.map((cita) => {
             const hora = cita.fechaHoraInicio.toTimeString().slice(0, 5);
             return hora;
@@ -641,7 +610,6 @@ export class CitasService {
             (slot) => !horasOcupadas.includes(slot.horaInicio),
         );
 
-        // 8. Filtrar slots pasados si es hoy
         const ahora = new Date();
         const esHoy = fecha === ahora.toISOString().split('T')[0];
 
@@ -698,14 +666,12 @@ export class CitasService {
         ) {
             const horaInicioSlot = `${String(currentHora).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
 
-            // Avanzar 30 minutos
             currentMin += CITA_DURACION_MINUTOS;
             if (currentMin >= 60) {
                 currentHora += 1;
                 currentMin -= 60;
             }
 
-            // Verificar que no exceda la hora fin
             if (
                 currentHora > finHora ||
                 (currentHora === finHora && currentMin > finMin)

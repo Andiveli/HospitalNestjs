@@ -87,10 +87,12 @@ export class CitaRepository {
         pacienteId: number,
         limit: number,
     ): Promise<CitaEntity[]> {
+        const fecha = new Date();
+        fecha.setMinutes(fecha.getMinutes() + 10);
         return this.ormRepository.find({
             where: {
                 paciente: { usuarioId: pacienteId },
-                fechaHoraInicio: MoreThan(new Date()),
+                fechaHoraInicio: MoreThan(fecha),
                 estado: { nombre: EstadoCita.PENDIENTE },
             },
             relations: [
@@ -193,7 +195,9 @@ export class CitaRepository {
         return this.ormRepository.findAndCount({
             where: {
                 paciente: { usuarioId: pacienteId },
-                estado: { nombre: EstadoCita.ATENDIDA },
+                estado: {
+                    nombre: In([EstadoCita.ATENDIDA, EstadoCita.CANCELADA]),
+                },
             },
             relations: [
                 'estado',
