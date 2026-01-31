@@ -23,7 +23,7 @@ export class TokenCleanupService {
      * Elimina el token y su fecha de expiración de usuarios con tokens vencidos
      */
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-    async clearExpiredTokens() {
+    async clearExpiredTokens(): Promise<void> {
         const now = new Date();
 
         const result = await this.peopleRepo

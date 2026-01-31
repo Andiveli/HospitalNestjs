@@ -14,6 +14,7 @@ import {
     ApiBody,
     ApiConflictResponse,
     ApiCreatedResponse,
+    ApiExtraModels,
     ApiNotFoundResponse,
     ApiOkResponse,
     ApiOperation,
@@ -26,8 +27,12 @@ import { Public } from 'src/common/decorators/public.decorator';
 import UserRequest from '../people/people.request';
 import { AuthService } from './auth.service';
 import {
+    AdminPerfilDto,
     AuthResponseDto,
     MensajeResponseDto,
+    PerfilCompletoResponseDto,
+    PerfilPacienteDto,
+    PerfilesContainerDto,
     PerfilResponseDto,
 } from './dto/auth-response.dto';
 import { CambiarPassDto } from './dto/cambiarPass.dto';
@@ -43,6 +48,12 @@ import { LocalAuthGuard } from './guards/local.guard';
  */
 
 @ApiTags('Autenticación')
+@ApiExtraModels(
+    PerfilResponseDto,
+    PerfilesContainerDto,
+    PerfilPacienteDto,
+    AdminPerfilDto,
+)
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
@@ -301,7 +312,7 @@ export class AuthController {
             'Obtiene la información completa del perfil del usuario autenticado',
     })
     @ApiOkResponse({
-        type: PerfilResponseDto,
+        type: PerfilCompletoResponseDto,
         description: 'Perfil del usuario obtenido correctamente',
     })
     @ApiUnauthorizedResponse({

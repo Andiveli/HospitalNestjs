@@ -1,6 +1,7 @@
 import {
     Injectable,
     ExecutionContext,
+    Logger,
     UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -13,6 +14,8 @@ import { IS_PUBLIC_KEY } from 'src/common/decorators/public.decorator';
  */
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
+    private readonly logger = new Logger(JwtAuthGuard.name);
+
     constructor(private reflector: Reflector) {
         super();
     }
@@ -42,7 +45,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
      */
     handleRequest(err: any, user: any) {
         if (err || !user) {
-            console.log('Desde handleRequest del JwtAuthGuard');
+            this.logger.warn(
+                'Intento de acceso no autorizado desde JwtAuthGuard',
+            );
             throw (
                 err ||
                 new UnauthorizedException({
