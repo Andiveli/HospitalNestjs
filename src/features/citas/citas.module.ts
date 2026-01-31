@@ -1,20 +1,25 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
-import { CitasController } from './citas.controller';
-import { CitasService } from './citas.service';
-import { CitaEntity } from './entities/cita.entity';
-import { EstadoCitaEntity } from './entities/estado-cita.entity';
-import { RegistroAtencionEntity } from './entities/registro-atencion.entity';
-import { HistoriaClinicaEntity } from './entities/historia-clinica.entity';
-import { CitaRepository } from './repositories/cita.repository';
-import { CitaActualizacionService } from './services/cita-actualizacion.service';
-import { CitaActualizacionJob } from './jobs/cita-actualizacion.job';
-import { MedicoEntity } from '../medicos/medicos.entity';
-import { PacientesEntity } from '../pacientes/pacientes.entity';
-import { HorarioMedicoEntity } from '../horario/horario-medico.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { DiaAtencionEntity } from '../horario/dia-atencion.entity';
 import { ExcepcionHorarioEntity } from '../horario/excepcion-horario.entity';
+import { HorarioMedicoEntity } from '../horario/horario-medico.entity';
+import { MedicoEntity } from '../medicos/medicos.entity';
+import { PacientesEntity } from '../pacientes/pacientes.entity';
+import { RecetasModule } from '../recetas/recetas.module';
+import { CitasService } from './citas.service';
+import {
+    CitasController,
+    CitasMedicoController,
+    CitasPacienteController,
+} from './controllers';
+import { CitaEntity } from './entities/cita.entity';
+import { EstadoCitaEntity } from './entities/estado-cita.entity';
+import { HistoriaClinicaEntity } from './entities/historia-clinica.entity';
+import { RegistroAtencionEntity } from './entities/registro-atencion.entity';
+import { CitaActualizacionJob } from './jobs/cita-actualizacion.job';
+import { CitaRepository } from './repositories/cita.repository';
+import { CitaActualizacionService } from './services/cita-actualizacion.service';
 
 @Module({
     imports: [
@@ -30,8 +35,13 @@ import { ExcepcionHorarioEntity } from '../horario/excepcion-horario.entity';
             DiaAtencionEntity,
             ExcepcionHorarioEntity,
         ]),
+        RecetasModule,
     ],
-    controllers: [CitasController],
+    controllers: [
+        CitasController,
+        CitasPacienteController,
+        CitasMedicoController,
+    ],
     providers: [
         CitasService,
         CitaRepository,

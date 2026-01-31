@@ -12,6 +12,7 @@ import { ExcepcionHorarioEntity } from '../horario/excepcion-horario.entity';
 import { HorarioMedicoEntity } from '../horario/horario-medico.entity';
 import { MedicoEntity } from '../medicos/medicos.entity';
 import { PacientesEntity } from '../pacientes/pacientes.entity';
+import { RecetasService } from '../recetas/recetas.service';
 import {
     CITA_DURACION_MINUTOS,
     CITA_HORAS_MINIMAS_MODIFICACION,
@@ -50,6 +51,7 @@ export class CitasService {
         private readonly horarioMedicoRepository: Repository<HorarioMedicoEntity>,
         @InjectRepository(ExcepcionHorarioEntity)
         private readonly excepcionHorarioRepository: Repository<ExcepcionHorarioEntity>,
+        private readonly recetasService: RecetasService,
     ) {}
 
     /**
@@ -254,7 +256,7 @@ export class CitasService {
             );
         }
 
-        return this.mapToDetalladaResponseDto(cita);
+        return await this.mapToDetalladaResponseDto(cita);
     }
 
     /**
@@ -279,7 +281,7 @@ export class CitasService {
             );
         }
 
-        return this.mapToDetalladaResponseDto(cita);
+        return await this.mapToDetalladaResponseDto(cita);
     }
 
     /**
@@ -475,17 +477,20 @@ export class CitasService {
      * @param cita - Entidad de cita con TODAS las relaciones cargadas
      * @returns CitaDetalladaResponseDto
      */
-    private mapToDetalladaResponseDto(
+    private async mapToDetalladaResponseDto(
         cita: CitaEntity,
-    ): CitaDetalladaResponseDto {
+    ): Promise<CitaDetalladaResponseDto> {
         const baseDto = this.mapToResponseDto(cita);
+
+        // Verificar si la cita tiene receta médica
+        const tieneReceta = await this.recetasService.citaTieneReceta(cita.id);
 
         return {
             ...baseDto,
             motivoCita: cita.registroAtencion?.motivoCita || undefined,
             diagnostico: cita.registroAtencion?.diagnostico || undefined,
             observaciones: cita.registroAtencion?.observaciones || undefined,
-            tieneReceta: false, // TODO: Implementar cuando exista el módulo de recetas
+            tieneReceta,
             tieneDerivaciones: false, // TODO: Implementar cuando exista el módulo de derivaciones
         };
     }

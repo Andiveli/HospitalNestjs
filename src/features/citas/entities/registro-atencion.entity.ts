@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { CitaEntity } from './cita.entity';
 import { HistoriaClinicaEntity } from './historia-clinica.entity';
+import { RecetaMedicaEntity } from '../../recetas/entities/receta-medica.entity';
 
 @Entity('registros_atencion')
 export class RegistroAtencionEntity {
@@ -42,10 +43,6 @@ export class RegistroAtencionEntity {
     @JoinColumn({ name: 'historia_id' })
     historiaClinica!: HistoriaClinicaEntity;
 
-    // TODO: Agregar relaciones cuando se creen los módulos
-    // @OneToOne(() => RecetaMedicaEntity, (receta) => receta.registroAtencion)
-    // recetaMedica?: RecetaMedicaEntity;
-
-    // @OneToMany(() => DerivacionEntity, (derivacion) => derivacion.registroAtencion)
-    // derivaciones?: DerivacionEntity[];
+    @OneToOne(() => RecetaMedicaEntity, (receta) => receta.registroAtencion)
+    recetaMedica?: RecetaMedicaEntity;
 }
