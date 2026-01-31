@@ -12,6 +12,8 @@ import { AuthModule } from './features/auth/auth.module';
 import { CitasModule } from './features/citas/citas.module';
 import { DocumentsModule } from './features/documents/documents.module';
 import { EnfermedadesModule } from './features/enfermedades/enfermedades.module';
+import { RecetasModule } from './features/recetas/recetas.module';
+import { HistoriasClinicasModule } from './features/historias-clinicas/historias-clinicas.module';
 import { EspecialidadModule } from './features/especialidad/especialidad.module';
 import { EstadoVidaModule } from './features/estado-vida/estado-vida.module';
 import { EstiloVidaModule } from './features/estilo-vida/estilo-vida.module';
@@ -118,6 +120,8 @@ import { VideollamadasModule } from './features/videollamadas/videollamadas.modu
         EspecialidadModule,
         HorarioModule,
         VideollamadasModule,
+        RecetasModule,
+        HistoriasClinicasModule,
     ],
 })
 export class AppModule {}

@@ -14,6 +14,7 @@ import {
     UploadedFile,
     UseInterceptors,
 } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
     ApiBadRequestResponse,
@@ -308,6 +309,8 @@ export class DocumentsController {
         description: 'Error interno del servidor',
     })
     @Roles(Rol.Paciente)
+    @UseInterceptors(CacheInterceptor)
+    @CacheTTL(3600000) // 1 hora - Los tipos de documento raramente cambian
     @Get('tipos')
     @HttpCode(HttpStatus.OK)
     async getTiposDocumento(): Promise<TipoDocumentoEntity[]> {
