@@ -30,6 +30,10 @@ import {
     InvitacionesService,
     ValidarCodigoResponse,
 } from '../services/invitaciones.service';
+import {
+    GenerarLinkInvitadoResponseDto,
+    ValidarCodigoInvitadoResponseDto,
+} from '../dto/invitaciones-response.dto';
 import UserRequest from 'src/features/people/people.request';
 
 /**
@@ -104,38 +108,7 @@ export class InvitacionesController {
     })
     @ApiCreatedResponse({
         description: 'Link de invitación generado exitosamente',
-        schema: {
-            type: 'object',
-            properties: {
-                message: {
-                    type: 'string',
-                    example: 'Link de invitación generado exitosamente',
-                },
-                data: {
-                    type: 'object',
-                    properties: {
-                        linkInvitacion: {
-                            type: 'string',
-                            example:
-                                'http://localhost:3000/videollamada/invitado/ABC123XY',
-                            description:
-                                'URL completa para compartir con el invitado',
-                        },
-                        codigoAcceso: {
-                            type: 'string',
-                            example: 'ABC123XY',
-                            description:
-                                'Código de acceso único (8 caracteres alfanuméricos)',
-                        },
-                        expiraEn: {
-                            type: 'string',
-                            example: '24 horas',
-                            description: 'Tiempo de validez del link',
-                        },
-                    },
-                },
-            },
-        },
+        type: GenerarLinkInvitadoResponseDto,
     })
     @ApiBadRequestResponse({
         description: 'Datos inválidos o mala solicitud',
@@ -213,61 +186,7 @@ export class InvitacionesController {
     })
     @ApiOkResponse({
         description: 'Token válido - información de la sesión',
-        schema: {
-            type: 'object',
-            properties: {
-                message: {
-                    type: 'string',
-                    example: 'Token válido',
-                },
-                data: {
-                    type: 'object',
-                    properties: {
-                        valido: {
-                            type: 'boolean',
-                            example: true,
-                            description: 'Siempre true en respuesta exitosa',
-                        },
-                        citaId: {
-                            type: 'number',
-                            example: 123,
-                            description: 'ID de la cita',
-                        },
-                        nombreSesion: {
-                            type: 'string',
-                            example: 'Consulta - Dr. Juan Pérez / María García',
-                            description: 'Nombre generado de la sesión',
-                        },
-                        nombreMedico: {
-                            type: 'string',
-                            example: 'Dr. Juan Pérez',
-                            description: 'Nombre completo del médico',
-                        },
-                        nombrePaciente: {
-                            type: 'string',
-                            example: 'María García',
-                            description: 'Nombre completo del paciente',
-                        },
-                        fechaHoraInicio: {
-                            type: 'string',
-                            format: 'date-time',
-                            example: '2024-01-15T14:30:00Z',
-                            description: 'Fecha y hora de inicio de la cita',
-                        },
-                        nombreInvitado: {
-                            type: 'string',
-                            example: 'Carlos Rodríguez',
-                            description: 'Nombre del invitado que accede',
-                        },
-                        rolInvitado: {
-                            type: 'string',
-                            example: 'acompanante',
-                            description: 'Rol del invitado en la sesión',
-                        },
-                    },
-                },
-            },
-        },
+        type: ValidarCodigoInvitadoResponseDto,
     })
     @ApiUnauthorizedResponse({
         description: 'Código de acceso inválido o malformado',

@@ -9,3 +9,17 @@ export {
     GuardarGrabacionResponseDto,
     ObtenerGrabacionResponseDto,
 } from './grabacion.dto';
+export {
+    CreateRoomResponseDto,
+    JoinInfoResponseDto,
+    GuestLinkResponseDto,
+    SignalResponseDto,
+    EndRoomResponseDto,
+    SalaTerminadaResponseDto,
+    GrabacionGuardadaResponseDto,
+    GrabacionObtenidaResponseDto,
+} from './video-rooms-response.dto';
+export {
+    GenerarLinkInvitadoResponseDto,
+    ValidarCodigoInvitadoResponseDto,
+} from './invitaciones-response.dto';

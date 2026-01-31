@@ -31,6 +31,11 @@ import {
     GuardarGrabacionDto,
     GuardarGrabacionResponseDto,
     ObtenerGrabacionResponseDto,
+    CreateRoomResponseDto,
+    JoinInfoResponseDto,
+    GuestLinkResponseDto,
+    SignalResponseDto,
+    EndRoomResponseDto,
 } from '../dto';
 import { VideollamadaService } from '../services/videollamada.service';
 import { InvitacionesService } from '../services/invitaciones.service';
@@ -101,66 +106,7 @@ export class VideoRoomsController {
     })
     @ApiCreatedResponse({
         description: 'Sala creada exitosamente',
-        schema: {
-            type: 'object',
-            properties: {
-                message: {
-                    type: 'string',
-                    example: 'Sala de videollamada creada exitosamente',
-                },
-                data: {
-                    type: 'object',
-                    properties: {
-                        sessionId: {
-                            type: 'string',
-                            example: 'room_abc123',
-                            description: 'ID único de la sala',
-                        },
-                        citaId: {
-                            type: 'number',
-                            example: 123,
-                            description: 'ID de la cita asociada',
-                        },
-                        nombreSesion: {
-                            type: 'string',
-                            example: 'Consulta - Dr. Juan Pérez / María García',
-                            description: 'Nombre descriptivo de la sesión',
-                        },
-                        fechaInicio: {
-                            type: 'string',
-                            format: 'date-time',
-                            example: '2024-01-15T14:30:00Z',
-                        },
-                        webRtcConfig: {
-                            type: 'object',
-                            properties: {
-                                stunServers: {
-                                    type: 'array',
-                                    items: { type: 'string' },
-                                    example: ['stun:stun.l.google.com:19302'],
-                                },
-                                turnServers: {
-                                    type: 'array',
-                                    items: { type: 'string' },
-                                    example: ['turn:turn.example.com:3478'],
-                                },
-                            },
-                        },
-                        participantes: {
-                            type: 'array',
-                            items: {
-                                type: 'object',
-                                properties: {
-                                    nombre: { type: 'string' },
-                                    rol: { type: 'string' },
-                                    socketId: { type: 'string' },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        },
+        type: CreateRoomResponseDto,
     })
     @ApiBadRequestResponse({
         description: 'ID de cita inválido o cita en estado no permitido',
@@ -238,49 +184,7 @@ export class VideoRoomsController {
     })
     @ApiOkResponse({
         description: 'Información de unión a sala',
-        schema: {
-            type: 'object',
-            properties: {
-                message: {
-                    type: 'string',
-                    example: 'Información de sala obtenida',
-                },
-                data: {
-                    type: 'object',
-                    properties: {
-                        sessionId: {
-                            type: 'string',
-                            example: 'room_123',
-                        },
-                        canJoin: {
-                            type: 'boolean',
-                            example: true,
-                        },
-                        reason: {
-                            type: 'string',
-                            example: null,
-                        },
-                        webRtcConfig: {
-                            type: 'object',
-                            properties: {
-                                iceServers: {
-                                    type: 'array',
-                                    items: { type: 'object' },
-                                },
-                            },
-                        },
-                        participantsCount: {
-                            type: 'number',
-                            example: 2,
-                        },
-                        maxParticipants: {
-                            type: 'number',
-                            example: 10,
-                        },
-                    },
-                },
-            },
-        },
+        type: JoinInfoResponseDto,
     })
     @ApiUnauthorizedResponse({
         description: 'No autorizado - token JWT inválido',
@@ -374,42 +278,7 @@ export class VideoRoomsController {
     })
     @ApiCreatedResponse({
         description: 'Link de invitado generado',
-        schema: {
-            type: 'object',
-            properties: {
-                message: {
-                    type: 'string',
-                    example: 'Link de invitado generado exitosamente',
-                },
-                data: {
-                    type: 'object',
-                    properties: {
-                        linkInvitacion: {
-                            type: 'string',
-                            example:
-                                'https://app.hospital.com/videollamada/invitado/ABC123XY',
-                            description: 'URL completa para compartir',
-                        },
-                        codigoAcceso: {
-                            type: 'string',
-                            example: 'ABC123XY',
-                            description:
-                                'Código de acceso único (8 caracteres)',
-                        },
-                        expiraEn: {
-                            type: 'string',
-                            example: '24 horas',
-                            description: 'Tiempo de validez',
-                        },
-                        rolInvitado: {
-                            type: 'string',
-                            example: 'acompanante',
-                            description: 'Rol asignado al invitado',
-                        },
-                    },
-                },
-            },
-        },
+        type: GuestLinkResponseDto,
     })
     @ApiBadRequestResponse({
         description: 'Datos inválidos del invitado',
@@ -530,25 +399,7 @@ export class VideoRoomsController {
     })
     @ApiOkResponse({
         description: 'Señal procesada y reenviada',
-        schema: {
-            type: 'object',
-            properties: {
-                message: {
-                    type: 'string',
-                    example: 'Señal procesada exitosamente',
-                },
-                signalId: {
-                    type: 'string',
-                    example: 'signal_abc123',
-                    description: 'ID único de la señal procesada',
-                },
-                timestamp: {
-                    type: 'string',
-                    format: 'date-time',
-                    example: '2024-01-15T14:35:00Z',
-                },
-            },
-        },
+        type: SignalResponseDto,
     })
     @ApiBadRequestResponse({
         description: 'Datos de señal inválidos',
@@ -619,45 +470,7 @@ export class VideoRoomsController {
     })
     @ApiOkResponse({
         description: 'Sala terminada exitosamente',
-        schema: {
-            type: 'object',
-            properties: {
-                message: {
-                    type: 'string',
-                    example: 'Sala terminada exitosamente',
-                },
-                data: {
-                    type: 'object',
-                    properties: {
-                        sessionId: {
-                            type: 'string',
-                            example: 'room_123',
-                        },
-                        terminationTime: {
-                            type: 'string',
-                            format: 'date-time',
-                            example: '2024-01-15T15:30:00Z',
-                        },
-                        duration: {
-                            type: 'number',
-                            example: 3600,
-                            description: 'Duración en segundos',
-                        },
-                        participantCount: {
-                            type: 'number',
-                            example: 3,
-                            description: 'Total participantes al terminar',
-                        },
-                        recordingUrl: {
-                            type: 'string',
-                            example:
-                                'https://s3.amazonaws.com/recordings/session_123.mp4',
-                            description: 'URL de grabación si está disponible',
-                        },
-                    },
-                },
-            },
-        },
+        type: EndRoomResponseDto,
     })
     @ApiUnauthorizedResponse({
         description: 'No autorizado - token JWT inválido',
