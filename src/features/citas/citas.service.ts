@@ -20,8 +20,8 @@ import {
 import { CitaDetalladaResponseDto } from './dto/cita-detallada-response.dto';
 import {
     CitaResponseDto,
-    MedicoInfo,
-    PacienteInfo,
+    MedicoInfoDto,
+    PacienteInfoDto,
 } from './dto/cita-response.dto';
 import { CreateCitaDto } from './dto/create-cita.dto';
 import { DiasAtencionResponseDto } from './dto/dias-atencion.dto';
@@ -258,6 +258,31 @@ export class CitasService {
     }
 
     /**
+     * Obtiene una cita específica por ID para un médico
+     * @param id - ID de la cita
+     * @param medicoId - ID del médico autenticado
+     * @returns Cita detallada con diagnóstico, recetas y derivaciones
+     */
+    async getCitaByIdMedico(
+        id: number,
+        medicoId: number,
+    ): Promise<CitaDetalladaResponseDto> {
+        const cita = await this.citaRepository.findByIdDetallada(id);
+
+        if (!cita) {
+            throw new NotFoundException(`Cita con ID ${id} no encontrada`);
+        }
+
+        if (cita.medico.usuarioId !== medicoId) {
+            throw new ForbiddenException(
+                'No tienes permiso para acceder a esta cita - solo el médico asignado puede verla',
+            );
+        }
+
+        return this.mapToDetalladaResponseDto(cita);
+    }
+
+    /**
      * Actualiza una cita existente
      * @param id - ID de la cita a actualizar
      * @param updateCitaDto - Nuevos datos de la cita
@@ -355,7 +380,7 @@ export class CitasService {
     async deleteCita(
         id: number,
         pacienteId: number,
-    ): Promise<{ message: string }> {
+    ): Promise<{ message: string; medicoId: number }> {
         const cita = await this.citaRepository.findById(id);
 
         if (!cita) {
@@ -385,6 +410,8 @@ export class CitasService {
             );
         }
 
+        const medicoId = cita.medico.usuarioId;
+
         this.logger.log(
             `Intentando cancelar cita ID ${id}, estado actual: "${cita.estado.nombre}"`,
         );
@@ -404,6 +431,7 @@ export class CitasService {
 
         return {
             message: `Cita del ${cita.fechaHoraInicio.toLocaleDateString()} cancelada exitosamente`,
+            medicoId,
         };
     }
 
@@ -413,7 +441,7 @@ export class CitasService {
      * @returns CitaResponseDto
      */
     private mapToResponseDto(cita: CitaEntity): CitaResponseDto {
-        const medicoInfo: MedicoInfo = {
+        const medicoInfo: MedicoInfoDto = {
             id: cita.medico.usuarioId,
             nombre: cita.medico.persona.primerNombre,
             apellido: cita.medico.persona.primerApellido,
@@ -424,7 +452,7 @@ export class CitasService {
                     : 'No especificada',
         };
 
-        const pacienteInfo: PacienteInfo = {
+        const pacienteInfo: PacienteInfoDto = {
             id: cita.paciente.usuarioId,
             nombre: cita.paciente.person.primerNombre,
             apellido: cita.paciente.person.primerApellido,
@@ -688,5 +716,72 @@ export class CitasService {
         }
 
         return slots;
+    }
+
+    /**
+     * Obtiene las próximas citas pendientes de un médico
+     * @param medicoId - ID del médico
+     * @returns Array de citas pendientes ordenadas por fecha ascendente
+     */
+    async getProximasCitasMedico(medicoId: number): Promise<CitaResponseDto[]> {
+        const citas = await this.citaRepository.findProximasCitasByMedico(
+            medicoId,
+            3,
+        );
+
+        return citas.map((cita) => this.mapToResponseDto(cita));
+    }
+
+    /**
+     * Obtiene todas las citas de un médico con paginación
+     * @param medicoId - ID del médico
+     * @param page - Número de página
+     * @param limit - Registros por página
+     * @returns Respuesta paginada con todas las citas del médico
+     */
+    async getAllCitasMedico(
+        medicoId: number,
+        page: number,
+        limit: number,
+    ): Promise<PaginatedResponseDto<CitaResponseDto>> {
+        const [citas, total] =
+            await this.citaRepository.findAllCitasByMedicoPaginadas(
+                medicoId,
+                page,
+                limit,
+            );
+
+        const data =
+            citas && citas.length > 0
+                ? citas.map((cita) => this.mapToResponseDto(cita))
+                : [];
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    }
+
+    /**
+     * Obtiene todas las citas de un médico para una fecha específica
+     * @param medicoId - ID del médico
+     * @param fecha - Fecha a consultar (formato YYYY-MM-DD)
+     * @returns Array de citas del médico para esa fecha
+     */
+    async getCitasMedicoPorFecha(
+        medicoId: number,
+        fecha: string,
+    ): Promise<CitaResponseDto[]> {
+        const citas = await this.citaRepository.findCitasByMedicoYFecha(
+            medicoId,
+            fecha,
+        );
+
+        return citas.map((cita) => this.mapToResponseDto(cita));
     }
 }

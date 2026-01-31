@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { MedicoInfo, PacienteInfo } from './cita-response.dto';
+import { MedicoInfoDto, PacienteInfoDto } from './cita-response.dto';
 
 export class CitaDetalladaResponseDto {
     @ApiProperty({
@@ -40,6 +40,7 @@ export class CitaDetalladaResponseDto {
 
     @ApiProperty({
         description: 'Información del médico asignado',
+        type: MedicoInfoDto,
         example: {
             id: 11,
             nombre: 'Juan',
@@ -47,17 +48,18 @@ export class CitaDetalladaResponseDto {
             especialidad: 'Cardiología',
         },
     })
-    medico!: MedicoInfo;
+    medico!: MedicoInfoDto;
 
     @ApiProperty({
         description: 'Información del paciente',
+        type: PacienteInfoDto,
         example: {
             id: 5,
             nombre: 'María',
             apellido: 'González',
         },
     })
-    paciente!: PacienteInfo;
+    paciente!: PacienteInfoDto;
 
     @ApiPropertyOptional({
         description: 'Motivo de la cita (solo disponible si fue atendida)',

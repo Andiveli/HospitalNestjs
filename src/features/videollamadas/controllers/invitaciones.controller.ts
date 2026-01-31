@@ -21,7 +21,9 @@ import {
     ApiNotFoundResponse,
     ApiTags,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
+import { RolesGuard } from '../../roles/roles.guard';
+import { Roles } from '../../roles/roles.decorator';
+import { Rol } from '../../roles/roles.enum';
 import { GenerarInvitacionDto } from '../dto/generar-invitacion.dto';
 import {
     GenerarLinkResponse,
@@ -42,6 +44,7 @@ import UserRequest from 'src/features/people/people.request';
  */
 @ApiTags('Invitaciones a Videollamadas')
 @ApiBearerAuth()
+@UseGuards(RolesGuard)
 @Controller('invitaciones')
 export class InvitacionesController {
     private readonly logger = new Logger(InvitacionesController.name);
@@ -60,7 +63,7 @@ export class InvitacionesController {
      * @returns Link de invitación y código de acceso
      */
     @Post(':id/generar-link-invitado')
-    @UseGuards(JwtAuthGuard)
+    @Roles(Rol.Paciente, Rol.Medico)
     @ApiOperation({
         summary: 'Generar link de invitación para videollamada',
         description: `

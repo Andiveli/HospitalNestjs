@@ -1,18 +1,61 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export interface MedicoInfo {
-    id: number;
-    nombre: string;
-    apellido: string;
+/**
+ * Información del médico en la cita
+ */
+export class MedicoInfoDto {
+    @ApiProperty({
+        description: 'ID del médico',
+        example: 11,
+    })
+    id!: number;
+
+    @ApiProperty({
+        description: 'Nombre del médico',
+        example: 'Juan',
+    })
+    nombre!: string;
+
+    @ApiProperty({
+        description: 'Apellido del médico',
+        example: 'Pérez',
+    })
+    apellido!: string;
+
+    @ApiProperty({
+        description: 'Especialidad del médico',
+        example: 'Cardiología',
+        required: false,
+    })
     especialidad?: string;
 }
 
-export interface PacienteInfo {
-    id: number;
-    nombre: string;
-    apellido: string;
+/**
+ * Información del paciente en la cita
+ */
+export class PacienteInfoDto {
+    @ApiProperty({
+        description: 'ID del paciente',
+        example: 5,
+    })
+    id!: number;
+
+    @ApiProperty({
+        description: 'Nombre del paciente',
+        example: 'María',
+    })
+    nombre!: string;
+
+    @ApiProperty({
+        description: 'Apellido del paciente',
+        example: 'González',
+    })
+    apellido!: string;
 }
 
+/**
+ * DTO para la respuesta de una cita
+ */
 export class CitaResponseDto {
     @ApiProperty({
         description: 'ID único de la cita',
@@ -52,6 +95,7 @@ export class CitaResponseDto {
 
     @ApiProperty({
         description: 'Información del médico asignado',
+        type: MedicoInfoDto,
         example: {
             id: 11,
             nombre: 'Juan',
@@ -59,15 +103,16 @@ export class CitaResponseDto {
             especialidad: 'Cardiología',
         },
     })
-    medico!: MedicoInfo;
+    medico!: MedicoInfoDto;
 
     @ApiProperty({
         description: 'Información del paciente',
+        type: PacienteInfoDto,
         example: {
             id: 5,
             nombre: 'María',
             apellido: 'González',
         },
     })
-    paciente!: PacienteInfo;
+    paciente!: PacienteInfoDto;
 }

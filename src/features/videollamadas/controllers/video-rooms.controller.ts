@@ -22,7 +22,9 @@ import {
     ApiNotFoundResponse,
     ApiTags,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
+import { RolesGuard } from '../../roles/roles.guard';
+import { Roles } from '../../roles/roles.decorator';
+import { Rol } from '../../roles/roles.enum';
 import { WebRtcSignalDto } from '../dto/webrtc-signal.dto';
 import {
     GenerarInvitacionDto,
@@ -49,6 +51,7 @@ import UserRequest from '../../people/people.request';
  */
 @ApiTags('Gestión de Salas de Videollamada')
 @ApiBearerAuth()
+@UseGuards(RolesGuard)
 @Controller('video-rooms')
 export class VideoRoomsController {
     constructor(
@@ -67,7 +70,7 @@ export class VideoRoomsController {
      * @returns Información de la sala creada
      */
     @Post(':citaId/create')
-    @UseGuards(JwtAuthGuard)
+    @Roles(Rol.Paciente, Rol.Medico)
     @ApiOperation({
         summary: 'Crear sala de videollamada',
         description: `
@@ -170,9 +173,12 @@ export class VideoRoomsController {
     })
     async createRoom(
         @Param('citaId') citaId: number,
-        @Request() _req: UserRequest,
+        @Request() req: UserRequest,
     ) {
-        const sesion = await this.videollamadaService.crearSesion(citaId);
+        const sesion = await this.videollamadaService.crearSesion(
+            citaId,
+            req.user.id,
+        );
 
         return {
             message: 'Sala de videollamada creada exitosamente',
@@ -206,7 +212,7 @@ export class VideoRoomsController {
      * @returns Información de acceso a la sala
      */
     @Get(':citaId/join')
-    @UseGuards(JwtAuthGuard)
+    @Roles(Rol.Paciente, Rol.Medico)
     @ApiOperation({
         summary: 'Obtener información para unirse a sala',
         description: `
@@ -284,9 +290,9 @@ export class VideoRoomsController {
     })
     async getJoinInfo(
         @Param('citaId') citaId: number,
-        @Request() _req: UserRequest,
+        @Request() req: UserRequest,
     ) {
-        await this.videollamadaService.obtenerSesion(citaId);
+        await this.videollamadaService.obtenerSesion(citaId, req.user.id);
         const participantes =
             await this.videollamadaService.obtenerParticipantesActivos(citaId);
 
@@ -320,7 +326,7 @@ export class VideoRoomsController {
      * @returns Link de invitación con token JWT
      */
     @Post(':citaId/guest-link')
-    @UseGuards(JwtAuthGuard)
+    @Roles(Rol.Paciente, Rol.Medico)
     @ApiOperation({
         summary: 'Generar link de invitado',
         description: `
@@ -451,7 +457,7 @@ export class VideoRoomsController {
      * @returns Confirmación de envío de señal
      */
     @Post(':citaId/signal')
-    @UseGuards(JwtAuthGuard)
+    @Roles(Rol.Paciente, Rol.Medico)
     @ApiOperation({
         summary: 'Señalización WebRTC',
         description: `
@@ -580,7 +586,7 @@ export class VideoRoomsController {
      * @returns Confirmación de terminación
      */
     @Delete(':citaId/end')
-    @UseGuards(JwtAuthGuard)
+    @Roles(Rol.Paciente, Rol.Medico)
     @ApiOperation({
         summary: 'Terminar sala de videollamada',
         description: `
@@ -664,9 +670,12 @@ export class VideoRoomsController {
     })
     async endRoom(
         @Param('citaId') citaId: number,
-        @Request() _req: UserRequest,
+        @Request() req: UserRequest,
     ) {
-        const sesion = await this.videollamadaService.finalizarSesion(citaId);
+        const sesion = await this.videollamadaService.finalizarSesion(
+            citaId,
+            req.user.id,
+        );
         const participantes =
             await this.videollamadaService.obtenerParticipantesActivos(citaId);
 
@@ -702,7 +711,7 @@ export class VideoRoomsController {
      * @returns Confirmación de guardado
      */
     @Post(':citaId/grabacion')
-    @UseGuards(JwtAuthGuard)
+    @Roles(Rol.Paciente, Rol.Medico)
     @ApiOperation({
         summary: 'Guardar URL de grabación',
         description: `
@@ -765,10 +774,12 @@ export class VideoRoomsController {
     async guardarGrabacion(
         @Param('citaId', ParseIntPipe) citaId: number,
         @Body() guardarGrabacionDto: GuardarGrabacionDto,
+        @Request() req: UserRequest,
     ): Promise<GuardarGrabacionResponseDto> {
         await this.videollamadaService.guardarGrabacion(
             citaId,
             guardarGrabacionDto.grabacionUrl,
+            req.user.id,
         );
 
         return {
@@ -786,7 +797,7 @@ export class VideoRoomsController {
      * @returns URL de grabación o null si no existe
      */
     @Get(':citaId/grabacion')
-    @UseGuards(JwtAuthGuard)
+    @Roles(Rol.Paciente, Rol.Medico)
     @ApiOperation({
         summary: 'Obtener grabación de videollamada',
         description: `
@@ -836,9 +847,12 @@ export class VideoRoomsController {
     })
     async obtenerGrabacion(
         @Param('citaId', ParseIntPipe) citaId: number,
+        @Request() req: UserRequest,
     ): Promise<ObtenerGrabacionResponseDto> {
-        const grabacionUrl =
-            await this.videollamadaService.obtenerGrabacion(citaId);
+        const grabacionUrl = await this.videollamadaService.obtenerGrabacion(
+            citaId,
+            req.user.id,
+        );
 
         return {
             grabacionUrl,

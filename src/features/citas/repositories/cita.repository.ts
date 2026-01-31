@@ -349,4 +349,103 @@ export class CitaRepository {
             },
         });
     }
+
+    /**
+     * Obtiene todas las citas de un médico para una fecha específica
+     * @param medicoId - ID del médico
+     * @param fecha - Fecha a consultar (formato YYYY-MM-DD)
+     * @returns Array de citas del médico para esa fecha
+     */
+    async findCitasByMedicoYFecha(
+        medicoId: number,
+        fecha: string,
+    ): Promise<CitaEntity[]> {
+        const inicioDia = new Date(fecha + 'T00:00:00');
+        const finDia = new Date(fecha + 'T23:59:59');
+
+        return this.ormRepository.find({
+            where: {
+                medico: { usuarioId: medicoId },
+                fechaHoraInicio: Between(inicioDia, finDia),
+            },
+            relations: [
+                'estado',
+                'medico',
+                'medico.persona',
+                'medico.especialidades',
+                'paciente',
+                'paciente.person',
+            ],
+            order: {
+                fechaHoraInicio: 'ASC',
+            },
+        });
+    }
+
+    /**
+     * Obtiene las próximas N citas pendientes de un médico
+     * @param medicoId - ID del médico
+     * @param limit - Cantidad de citas a devolver
+     * @returns Array de citas pendientes ordenadas por fecha ascendente
+     */
+    async findProximasCitasByMedico(
+        medicoId: number,
+        limit: number,
+    ): Promise<CitaEntity[]> {
+        const fecha = new Date();
+        fecha.setMinutes(fecha.getMinutes() + 10);
+        return this.ormRepository.find({
+            where: {
+                medico: { usuarioId: medicoId },
+                fechaHoraInicio: MoreThan(fecha),
+                estado: { nombre: EstadoCita.PENDIENTE },
+            },
+            relations: [
+                'estado',
+                'medico',
+                'medico.persona',
+                'medico.especialidades',
+                'paciente',
+                'paciente.person',
+            ],
+            order: {
+                fechaHoraInicio: 'ASC',
+            },
+            take: limit,
+        });
+    }
+
+    /**
+     * Obtiene todas las citas de un médico con paginación
+     * @param medicoId - ID del médico
+     * @param page - Número de página
+     * @param limit - Registros por página
+     * @returns Tupla [citas, total]
+     */
+    async findAllCitasByMedicoPaginadas(
+        medicoId: number,
+        page: number,
+        limit: number,
+    ): Promise<[CitaEntity[], number]> {
+        const skip = (page - 1) * limit;
+
+        return this.ormRepository.findAndCount({
+            where: {
+                medico: { usuarioId: medicoId },
+            },
+            relations: [
+                'estado',
+                'medico',
+                'medico.persona',
+                'medico.especialidades',
+                'paciente',
+                'paciente.person',
+            ],
+            order: {
+                fechaHoraInicio: 'DESC',
+            },
+            skip,
+            take: limit,
+        });
+    }
 }

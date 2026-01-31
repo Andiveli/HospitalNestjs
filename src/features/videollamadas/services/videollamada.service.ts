@@ -3,6 +3,7 @@ import {
     NotFoundException,
     BadRequestException,
     ConflictException,
+    ForbiddenException,
     Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -38,11 +39,32 @@ export class VideollamadaService {
     ) {}
 
     /**
+     * Valida que el usuario tenga permisos sobre la cita (sea paciente o médico)
+     * @param cita - Entidad de la cita
+     * @param usuarioId - ID del usuario a validar
+     * @throws ForbiddenException si el usuario no tiene permisos
+     */
+    private validarPermisosCita(cita: CitaEntity, usuarioId: number): void {
+        const esMedico = cita.medico.usuarioId === usuarioId;
+        const esPaciente = cita.paciente.usuarioId === usuarioId;
+
+        if (!esMedico && !esPaciente) {
+            throw new ForbiddenException(
+                'Solo el médico o paciente de la cita pueden realizar esta acción',
+            );
+        }
+    }
+
+    /**
      * Crea una nueva sesión de videollamada asociada a una cita
      * @param citaId - ID de la cita
+     * @param usuarioId - ID del usuario que crea la sesión (paciente o médico)
      * @returns La sesión creada
      */
-    async crearSesion(citaId: number): Promise<SesionConsultaEntity> {
+    async crearSesion(
+        citaId: number,
+        usuarioId: number,
+    ): Promise<SesionConsultaEntity> {
         // 1. Verificar que la cita existe
         const cita = await this.citaRepository.findOne({
             where: { id: citaId },
@@ -58,7 +80,10 @@ export class VideollamadaService {
             throw new NotFoundException(`Cita con ID ${citaId} no encontrada`);
         }
 
-        // 2. Verificar que no exista ya una sesión para esta cita
+        // 2. Validar que el usuario tenga permisos sobre la cita
+        this.validarPermisosCita(cita, usuarioId);
+
+        // 3. Verificar que no exista ya una sesión para esta cita
         const sesionExistente =
             await this.sesionRepository.existsByCitaId(citaId);
 
@@ -298,9 +323,27 @@ export class VideollamadaService {
     /**
      * Finaliza una sesión de videollamada
      * @param citaId - ID de la cita/sesión
+     * @param usuarioId - ID del usuario que finaliza la sesión (paciente o médico)
      * @returns La sesión finalizada
      */
-    async finalizarSesion(citaId: number): Promise<SesionConsultaEntity> {
+    async finalizarSesion(
+        citaId: number,
+        usuarioId: number,
+    ): Promise<SesionConsultaEntity> {
+        // 1. Verificar que la cita existe
+        const cita = await this.citaRepository.findOne({
+            where: { id: citaId },
+            relations: ['paciente', 'medico'],
+        });
+
+        if (!cita) {
+            throw new NotFoundException(`Cita con ID ${citaId} no encontrada`);
+        }
+
+        // 2. Validar que el usuario tenga permisos sobre la cita
+        this.validarPermisosCita(cita, usuarioId);
+
+        // 3. Verificar que la sesión existe
         const sesion = await this.sesionRepository.findByCitaId(citaId);
 
         if (!sesion) {
@@ -309,7 +352,7 @@ export class VideollamadaService {
             );
         }
 
-        // Buscar el estado "finalizada"
+        // 4. Buscar el estado "finalizada"
         const estadoFinalizada = await this.estadoSesionRepository.findOne({
             where: { nombre: 'finalizada' },
         });
@@ -333,9 +376,14 @@ export class VideollamadaService {
     /**
      * Obtiene la información completa de una sesión
      * @param citaId - ID de la cita/sesión
+     * @param usuarioId - ID del usuario que solicita la sesión (paciente o médico)
      * @returns La sesión con todas sus relaciones
      */
-    async obtenerSesion(citaId: number): Promise<SesionConsultaEntity> {
+    async obtenerSesion(
+        citaId: number,
+        usuarioId: number,
+    ): Promise<SesionConsultaEntity> {
+        // 1. Verificar que la sesión existe
         const sesion = await this.sesionRepository.findByCitaId(citaId);
 
         if (!sesion) {
@@ -343,6 +391,19 @@ export class VideollamadaService {
                 `Sesión para cita ID ${citaId} no encontrada`,
             );
         }
+
+        // 2. Verificar que la cita existe
+        const cita = await this.citaRepository.findOne({
+            where: { id: citaId },
+            relations: ['paciente', 'medico'],
+        });
+
+        if (!cita) {
+            throw new NotFoundException(`Cita con ID ${citaId} no encontrada`);
+        }
+
+        // 3. Validar que el usuario tenga permisos sobre la cita
+        this.validarPermisosCita(cita, usuarioId);
 
         return sesion;
     }
@@ -369,13 +430,28 @@ export class VideollamadaService {
      * Guarda la URL de la grabación de una videollamada
      * @param citaId - ID de la cita
      * @param grabacionUrl - URL de la grabación en S3
+     * @param usuarioId - ID del usuario que guarda la grabación (paciente o médico)
      * @returns Confirmación de guardado
      */
     async guardarGrabacion(
         citaId: number,
         grabacionUrl: string,
+        usuarioId: number,
     ): Promise<void> {
-        // 1. Verificar que la sesión existe
+        // 1. Verificar que la cita existe
+        const cita = await this.citaRepository.findOne({
+            where: { id: citaId },
+            relations: ['paciente', 'medico'],
+        });
+
+        if (!cita) {
+            throw new NotFoundException(`Cita con ID ${citaId} no encontrada`);
+        }
+
+        // 2. Validar que el usuario tenga permisos sobre la cita
+        this.validarPermisosCita(cita, usuarioId);
+
+        // 3. Verificar que la sesión existe
         const sesion = await this.sesionRepository.findByCitaId(citaId);
 
         if (!sesion) {
@@ -384,7 +460,7 @@ export class VideollamadaService {
             );
         }
 
-        // 2. Actualizar la URL de grabación
+        // 4. Actualizar la URL de grabación
         await this.sesionRepository.updateGrabacionUrl(citaId, grabacionUrl);
 
         this.logger.log(
@@ -395,9 +471,27 @@ export class VideollamadaService {
     /**
      * Obtiene la URL de grabación de una videollamada
      * @param citaId - ID de la cita
+     * @param usuarioId - ID del usuario que solicita la grabación (paciente o médico)
      * @returns URL de grabación o null si no existe
      */
-    async obtenerGrabacion(citaId: number): Promise<string | null> {
+    async obtenerGrabacion(
+        citaId: number,
+        usuarioId: number,
+    ): Promise<string | null> {
+        // 1. Verificar que la cita existe
+        const cita = await this.citaRepository.findOne({
+            where: { id: citaId },
+            relations: ['paciente', 'medico'],
+        });
+
+        if (!cita) {
+            throw new NotFoundException(`Cita con ID ${citaId} no encontrada`);
+        }
+
+        // 2. Validar que el usuario tenga permisos sobre la cita
+        this.validarPermisosCita(cita, usuarioId);
+
+        // 3. Verificar que la sesión existe
         const sesion = await this.sesionRepository.findByCitaId(citaId);
 
         if (!sesion) {
