@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { SesionConsultaRepository } from '../repositories/sesion-consulta.repository';
 import { ParticipanteSesionRepository } from '../repositories/participante-sesion.repository';
 import { MensajeChatRepository } from '../repositories/mensaje-chat.repository';
+import { InvitacionVideollamadaRepository } from '../repositories/invitacion-videollamada.repository';
 import { CitaEntity } from '../../citas/entities/cita.entity';
 import { EstadoSesionEntity } from '../entities/estado-sesion.entity';
 import { RolSesionEntity } from '../entities/rol-sesion.entity';
@@ -28,6 +29,7 @@ export class VideollamadaService {
         private readonly sesionRepository: SesionConsultaRepository,
         private readonly participanteRepository: ParticipanteSesionRepository,
         private readonly mensajeRepository: MensajeChatRepository,
+        private readonly invitacionRepository: InvitacionVideollamadaRepository,
         @InjectRepository(CitaEntity)
         private readonly citaRepository: Repository<CitaEntity>,
         @InjectRepository(EstadoSesionEntity)
@@ -427,6 +429,100 @@ export class VideollamadaService {
     }
 
     /**
+     * Busca un participante por usuarioId y citaId
+     * @param citaId - ID de la cita
+     * @param usuarioId - ID del usuario
+     * @returns El participante o null si no existe
+     */
+    async buscarParticipantePorUsuario(
+        citaId: number,
+        usuarioId: number,
+    ): Promise<ParticipanteSesionEntity | null> {
+        return this.participanteRepository.findByUsuarioAndCita(
+            usuarioId,
+            citaId,
+        );
+    }
+
+    /**
+     * Obtiene un participante por su ID
+     * @param participanteId - ID del participante
+     * @returns El participante encontrado
+     */
+    async obtenerParticipante(
+        participanteId: number,
+    ): Promise<ParticipanteSesionEntity | null> {
+        return this.participanteRepository.findById(participanteId);
+    }
+
+    /**
+     * Determina el rol de un usuario en una cita (médico o paciente)
+     * @param citaId - ID de la cita
+     * @param usuarioId - ID del usuario
+     * @returns 'medico' o 'paciente'
+     */
+    async determinarRol(
+        citaId: number,
+        usuarioId: number,
+    ): Promise<'medico' | 'paciente'> {
+        const cita = await this.citaRepository.findOne({
+            where: { id: citaId },
+            relations: ['paciente', 'medico'],
+        });
+
+        if (!cita) {
+            throw new NotFoundException(`Cita con ID ${citaId} no encontrada`);
+        }
+
+        if (cita.medico.usuarioId === usuarioId) {
+            return 'medico';
+        }
+
+        if (cita.paciente.usuarioId === usuarioId) {
+            return 'paciente';
+        }
+
+        throw new ForbiddenException('El usuario no pertenece a esta cita');
+    }
+
+    /**
+     * Actualiza el estado de media de un participante (mic, cámara, pantalla)
+     * @param participanteId - ID del participante
+     * @param estado - Objeto con los estados a actualizar
+     * @returns El participante actualizado
+     */
+    async actualizarEstadoMedia(
+        participanteId: number,
+        estado: {
+            micActivo?: boolean;
+            camaraActiva?: boolean;
+            compartiendoPantalla?: boolean;
+        },
+    ): Promise<ParticipanteSesionEntity> {
+        const participante =
+            await this.participanteRepository.findById(participanteId);
+
+        if (!participante) {
+            throw new NotFoundException(
+                `Participante con ID ${participanteId} no encontrado`,
+            );
+        }
+
+        // Actualizar solo los campos proporcionados
+        if (estado.micActivo !== undefined) {
+            participante.micActivo = estado.micActivo;
+        }
+        if (estado.camaraActiva !== undefined) {
+            participante.camaraActiva = estado.camaraActiva;
+        }
+        if (estado.compartiendoPantalla !== undefined) {
+            participante.compartiendoPantalla = estado.compartiendoPantalla;
+        }
+
+        return this.participanteRepository.save(participante);
+    }
+
+    /**
      * Guarda la URL de la grabación de una videollamada
      * @param citaId - ID de la cita
      * @param grabacionUrl - URL de la grabación en S3
@@ -501,5 +597,136 @@ export class VideollamadaService {
         }
 
         return sesion.grabacionUrl;
+    }
+
+    /**
+     * Procesa el ingreso de un invitado a la videollamada usando su código de acceso
+     * Valida el código, crea el participante si no existe y retorna la información necesaria
+     *
+     * @param codigoAcceso - Código de acceso del invitado (ej: "PR0TBJQB93YM")
+     * @param nombreInvitado - Nombre opcional proporcionado al unirse
+     * @returns Objeto con participante creado/encontrado y citaId
+     */
+    async procesarIngresoInvitado(
+        codigoAcceso: string,
+        nombreInvitado?: string,
+    ): Promise<{ participante: ParticipanteSesionEntity; citaId: number }> {
+        // 1. Buscar la invitación por código
+        const invitacion =
+            await this.invitacionRepository.buscarPorCodigoAcceso(codigoAcceso);
+
+        if (!invitacion) {
+            throw new NotFoundException('Código de acceso inválido');
+        }
+
+        // 2. Validar que la invitación esté activa
+        if (!invitacion.activo) {
+            throw new ForbiddenException(
+                'El código de acceso ha sido desactivado',
+            );
+        }
+
+        // 3. Verificar que no haya expirado
+        const ahora = new Date();
+        if (invitacion.fechaHoraExpiracion < ahora) {
+            throw new ForbiddenException('El código de acceso ha expirado');
+        }
+
+        // 4. Verificar que la cita existe
+        if (!invitacion.cita) {
+            throw new NotFoundException(
+                'La cita asociada a esta invitación ya no existe',
+            );
+        }
+
+        const citaId = invitacion.citaId;
+
+        // 5. Verificar que existe sesión activa para la cita
+        let sesion = await this.sesionRepository.findByCitaId(citaId);
+
+        // Si no existe sesión, crearla automáticamente
+        if (!sesion) {
+            // Buscar estado "activa"
+            const estadoActiva = await this.estadoSesionRepository.findOne({
+                where: { nombre: 'activa' },
+            });
+
+            if (!estadoActiva) {
+                throw new Error(
+                    'Estado "activa" no encontrado en la tabla estados_sesion',
+                );
+            }
+
+            // Construir nombre de sesión
+            const nombreMedico = invitacion.cita.medico?.persona
+                ? `${invitacion.cita.medico.persona.primerNombre} ${invitacion.cita.medico.persona.primerApellido}`
+                : 'Médico';
+            const nombrePaciente = invitacion.cita.paciente?.person
+                ? `${invitacion.cita.paciente.person.primerNombre} ${invitacion.cita.paciente.person.primerApellido}`
+                : 'Paciente';
+            const nombreSesion = `Consulta - ${nombreMedico} / ${nombrePaciente}`;
+
+            sesion = await this.sesionRepository.create({
+                citaId,
+                nombre: nombreSesion,
+                fechaHoraInicio: new Date(),
+                fechaHoraFin: invitacion.cita.fechaHoraFin,
+                estado: estadoActiva,
+                grabacionUrl: null,
+            });
+
+            this.logger.log(
+                `Sesión creada automáticamente para invitado en cita ${citaId}`,
+            );
+        }
+
+        // 6. Buscar rol "invitado"
+        const rol = await this.rolSesionRepository.findOne({
+            where: { nombre: invitacion.rolInvitado || 'invitado' },
+        });
+
+        if (!rol) {
+            throw new NotFoundException(
+                `Rol "${invitacion.rolInvitado || 'invitado'}" no encontrado`,
+            );
+        }
+
+        // 7. Verificar si ya existe participante para esta invitación
+        // Buscar por nombre de invitado y citaId (ya que no tiene usuarioId)
+        const participanteExistente =
+            await this.participanteRepository.findByNombreAndCita(
+                invitacion.nombreInvitado,
+                citaId,
+            );
+
+        if (participanteExistente) {
+            // Ya existe, retornar el existente
+            this.logger.log(
+                `Invitado ${invitacion.nombreInvitado} ya es participante de la sesión ${citaId}`,
+            );
+            return { participante: participanteExistente, citaId };
+        }
+
+        // 8. Crear nuevo participante para el invitado
+        const nuevoParticipante = await this.participanteRepository.create({
+            nombre: nombreInvitado || invitacion.nombreInvitado,
+            tokenAcceso: crypto.randomUUID(),
+            fechaHoraUnion: new Date(),
+            fechaHoraSalida: null,
+            rol,
+            usuario: null, // Invitados no tienen usuario asociado
+            sesion,
+        });
+
+        // 9. Marcar la invitación como usada (si no estaba ya)
+        if (!invitacion.usado) {
+            await this.invitacionRepository.marcarComoUsada(invitacion.id);
+        }
+
+        this.logger.log(
+            `Participante invitado creado: ${nuevoParticipante.nombre} para cita ${citaId}`,
+        );
+
+        return { participante: nuevoParticipante, citaId };
     }
 }

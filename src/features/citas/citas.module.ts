@@ -7,11 +7,14 @@ import { HorarioMedicoEntity } from '../horario/horario-medico.entity';
 import { MedicoEntity } from '../medicos/medicos.entity';
 import { PacientesEntity } from '../pacientes/pacientes.entity';
 import { RecetasModule } from '../recetas/recetas.module';
+import { RecetaMedicaEntity } from '../recetas/entities/receta-medica.entity';
+import { RecetaMedicamentoEntity } from '../recetas/entities/receta-medicamento.entity';
 import { CitasService } from './citas.service';
 import {
     CitasController,
     CitasMedicoController,
     CitasPacienteController,
+    RegistroAtencionController,
 } from './controllers';
 import { CitaEntity } from './entities/cita.entity';
 import { EstadoCitaEntity } from './entities/estado-cita.entity';
@@ -20,6 +23,8 @@ import { RegistroAtencionEntity } from './entities/registro-atencion.entity';
 import { CitaActualizacionJob } from './jobs/cita-actualizacion.job';
 import { CitaRepository } from './repositories/cita.repository';
 import { CitaActualizacionService } from './services/cita-actualizacion.service';
+import { CitasCacheService } from './services/citas-cache.service';
+import { RegistroAtencionService } from './services/registro-atencion.service';
 
 @Module({
     imports: [
@@ -34,6 +39,8 @@ import { CitaActualizacionService } from './services/cita-actualizacion.service'
             HorarioMedicoEntity,
             DiaAtencionEntity,
             ExcepcionHorarioEntity,
+            RecetaMedicaEntity,
+            RecetaMedicamentoEntity,
         ]),
         RecetasModule,
     ],
@@ -41,12 +48,15 @@ import { CitaActualizacionService } from './services/cita-actualizacion.service'
         CitasController,
         CitasPacienteController,
         CitasMedicoController,
+        RegistroAtencionController,
     ],
     providers: [
         CitasService,
         CitaRepository,
         CitaActualizacionService,
         CitaActualizacionJob,
+        CitasCacheService,
+        RegistroAtencionService,
     ],
     exports: [CitasService, CitaRepository],
 })

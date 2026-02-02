@@ -170,4 +170,47 @@ export class ParticipanteSesionRepository {
             },
         });
     }
+
+    /**
+     * Busca un participante por usuario y cita (alias de findByUsuarioYSesion)
+     * @param usuarioId - ID del usuario
+     * @param citaId - ID de la cita (sesion)
+     * @returns El participante encontrado o null
+     */
+    async findByUsuarioAndCita(
+        usuarioId: number,
+        citaId: number,
+    ): Promise<ParticipanteSesionEntity | null> {
+        return this.findByUsuarioYSesion(usuarioId, citaId);
+    }
+
+    /**
+     * Guarda/actualiza un participante
+     * @param participante - Entidad del participante a guardar
+     * @returns El participante guardado
+     */
+    async save(
+        participante: ParticipanteSesionEntity,
+    ): Promise<ParticipanteSesionEntity> {
+        return this.ormRepository.save(participante);
+    }
+
+    /**
+     * Busca un participante por nombre y citaId (para invitados)
+     * @param nombre - Nombre del participante invitado
+     * @param citaId - ID de la cita (sesión)
+     * @returns El participante encontrado o null
+     */
+    async findByNombreAndCita(
+        nombre: string,
+        citaId: number,
+    ): Promise<ParticipanteSesionEntity | null> {
+        return this.ormRepository.findOne({
+            where: {
+                nombre,
+                sesion: { citaId },
+            },
+            relations: ['usuario', 'rol', 'sesion'],
+        });
+    }
 }

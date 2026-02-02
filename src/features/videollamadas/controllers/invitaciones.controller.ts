@@ -21,6 +21,7 @@ import {
     ApiNotFoundResponse,
     ApiTags,
 } from '@nestjs/swagger';
+import { Public } from '../../../common/decorators/public.decorator';
 import { RolesGuard } from '../../roles/roles.guard';
 import { Roles } from '../../roles/roles.decorator';
 import { Rol } from '../../roles/roles.enum';
@@ -166,6 +167,7 @@ export class InvitacionesController {
      * @returns Información de la sesión y validación del código
      */
     @Get('invitado/:codigo')
+    @Public()
     @ApiOperation({
         summary: 'Validar código de invitación',
         description: `

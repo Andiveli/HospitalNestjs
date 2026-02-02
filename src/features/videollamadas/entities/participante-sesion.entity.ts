@@ -60,4 +60,26 @@ export class ParticipanteSesionEntity {
 
     @OneToMany(() => MensajeChatEntity, (mensaje) => mensaje.participante)
     mensajes!: MensajeChatEntity[];
+
+    // Estados de media (no persistidos en BD, manejados en tiempo real)
+    @Column('boolean', {
+        name: 'mic_activo',
+        default: true,
+        nullable: true,
+    })
+    micActivo!: boolean | null;
+
+    @Column('boolean', {
+        name: 'camara_activa',
+        default: true,
+        nullable: true,
+    })
+    camaraActiva!: boolean | null;
+
+    @Column('boolean', {
+        name: 'compartiendo_pantalla',
+        default: false,
+        nullable: true,
+    })
+    compartiendoPantalla!: boolean | null;
 }

@@ -289,13 +289,20 @@ export class CitasService {
      * @param id - ID de la cita a actualizar
      * @param updateCitaDto - Nuevos datos de la cita
      * @param pacienteId - ID del paciente autenticado
-     * @returns CitaResponseDto con la cita actualizada
+     * @returns Objeto con la cita actualizada y metadata para invalidación de caché
      */
     async updateCita(
         id: number,
         updateCitaDto: UpdateCitaDto,
         pacienteId: number,
-    ): Promise<CitaResponseDto> {
+    ): Promise<{
+        cita: CitaResponseDto;
+        cacheMetadata: {
+            medicoId: number;
+            fechaAnterior: string;
+            fechaNueva: string;
+        };
+    }> {
         const cita = await this.citaRepository.findById(id);
 
         if (!cita) {
@@ -330,6 +337,10 @@ export class CitasService {
                 'Debes proporcionar una nueva fecha y hora para la cita',
             );
         }
+
+        // Guardar fecha anterior para invalidación de caché
+        const fechaAnterior = cita.fechaHoraInicio.toISOString().split('T')[0];
+        const medicoId = cita.medico.usuarioId;
 
         const nuevaFechaInicio = new Date(updateCitaDto.fechaHoraInicio);
         if (nuevaFechaInicio <= ahora) {
@@ -370,19 +381,28 @@ export class CitasService {
             throw new Error('Error al actualizar la cita');
         }
 
-        return this.mapToResponseDto(citaActualizada);
+        const fechaNueva = nuevaFechaInicio.toISOString().split('T')[0];
+
+        return {
+            cita: this.mapToResponseDto(citaActualizada),
+            cacheMetadata: {
+                medicoId,
+                fechaAnterior,
+                fechaNueva,
+            },
+        };
     }
 
     /**
      * Cancela una cita (soft delete)
      * @param id - ID de la cita a cancelar
      * @param pacienteId - ID del paciente autenticado
-     * @returns Mensaje de confirmación
+     * @returns Mensaje de confirmación con datos para invalidación de caché
      */
     async deleteCita(
         id: number,
         pacienteId: number,
-    ): Promise<{ message: string; medicoId: number }> {
+    ): Promise<{ message: string; medicoId: number; fecha: string }> {
         const cita = await this.citaRepository.findById(id);
 
         if (!cita) {
@@ -413,6 +433,7 @@ export class CitasService {
         }
 
         const medicoId = cita.medico.usuarioId;
+        const fecha = cita.fechaHoraInicio.toISOString().split('T')[0];
 
         this.logger.log(
             `Intentando cancelar cita ID ${id}, estado actual: "${cita.estado.nombre}"`,
@@ -434,6 +455,7 @@ export class CitasService {
         return {
             message: `Cita del ${cita.fechaHoraInicio.toLocaleDateString()} cancelada exitosamente`,
             medicoId,
+            fecha,
         };
     }
 

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomInt } from 'crypto';
 import { Repository } from 'typeorm';
 import { InvitacionVideollamadaEntity } from '../entities';
 
@@ -51,7 +52,6 @@ export class InvitacionVideollamadaRepository {
                 'cita.paciente.person',
                 'cita.estado',
                 'invitadoPor',
-                'invitadoPor.persona',
             ],
         });
     }
@@ -74,7 +74,7 @@ export class InvitacionVideollamadaRepository {
     ): Promise<InvitacionVideollamadaEntity[]> {
         return await this.repository.find({
             where: { citaId },
-            relations: ['invitadoPor', 'invitadoPor.persona'],
+            relations: ['invitadoPor'],
             order: { fechaHoraCreacion: 'DESC' },
         });
     }
@@ -93,14 +93,24 @@ export class InvitacionVideollamadaRepository {
     }
 
     /**
-     * Genera un código de acceso único
+     * Genera un código de acceso único y criptográficamente seguro
+     *
+     * Usa crypto.randomInt() en lugar de Math.random() para mayor seguridad.
+     * Genera un código de 12 caracteres alfanuméricos (mayúsculas y números).
+     * Esto proporciona ~62 bits de entropía (36^12 combinaciones posibles).
+     *
+     * @returns Código de acceso de 12 caracteres (ej: "A7K3X9M2P4Q1")
      */
     private generarCodigoAcceso(): string {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const length = 12;
         let codigo = '';
-        for (let i = 0; i < 8; i++) {
-            codigo += chars.charAt(Math.floor(Math.random() * chars.length));
+
+        for (let i = 0; i < length; i++) {
+            const index = randomInt(0, chars.length);
+            codigo += chars.charAt(index);
         }
+
         return codigo;
     }
 }

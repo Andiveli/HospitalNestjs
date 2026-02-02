@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThanOrEqual, Repository } from 'typeorm';
 import { SesionConsultaEntity } from '../entities/sesion-consulta.entity';
 
 @Injectable()
@@ -174,5 +174,51 @@ export class SesionConsultaRepository {
         grabacionUrl: string,
     ): Promise<void> {
         await this.ormRepository.update({ citaId }, { grabacionUrl });
+    }
+
+    /**
+     * Obtiene sesiones activas que han superado su fecha de fin programada
+     * @returns Array de sesiones expiradas que aún están activas
+     */
+    async findSesionesActivasExpiradas(): Promise<SesionConsultaEntity[]> {
+        const ahora = new Date();
+
+        return this.ormRepository.find({
+            where: {
+                estado: { nombre: 'activa' },
+                fechaHoraFin: LessThanOrEqual(ahora),
+            },
+            relations: [
+                'cita',
+                'cita.medico',
+                'cita.medico.persona',
+                'cita.paciente',
+                'cita.paciente.person',
+                'estado',
+                'participantes',
+            ],
+        });
+    }
+
+    /**
+     * Obtiene sesiones activas que están próximas a expirar
+     * @param minutosAntes - Minutos antes de la expiración para considerar "próxima"
+     * @returns Array de sesiones que expirarán pronto
+     */
+    async findSesionesProximasAExpirar(
+        minutosAntes: number,
+    ): Promise<SesionConsultaEntity[]> {
+        const ahora = new Date();
+        const limite = new Date(ahora.getTime() + minutosAntes * 60 * 1000);
+
+        return this.ormRepository
+            .createQueryBuilder('sesion')
+            .leftJoinAndSelect('sesion.cita', 'cita')
+            .leftJoinAndSelect('sesion.estado', 'estado')
+            .leftJoinAndSelect('sesion.participantes', 'participantes')
+            .where('estado.nombre = :estadoActiva', { estadoActiva: 'activa' })
+            .andWhere('sesion.fechaHoraFin > :ahora', { ahora })
+            .andWhere('sesion.fechaHoraFin <= :limite', { limite })
+            .getMany();
     }
 }

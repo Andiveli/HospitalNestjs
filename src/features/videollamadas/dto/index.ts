@@ -23,3 +23,12 @@ export {
     GenerarLinkInvitadoResponseDto,
     ValidarCodigoInvitadoResponseDto,
 } from './invitaciones-response.dto';
+export {
+    ToggleMicDto,
+    ToggleCameraDto,
+    MediaStateUpdateDto,
+    RecordingControlDto,
+    RecordingStateDto,
+    RecordingChunkDto,
+    ParticipantsListDto,
+} from './media-controls.dto';

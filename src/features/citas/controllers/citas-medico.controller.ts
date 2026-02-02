@@ -1,4 +1,4 @@
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { CacheTTL } from '@nestjs/cache-manager';
 import {
     Controller,
     Get,
@@ -9,6 +9,7 @@ import {
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
+import { UserScopedCacheInterceptor } from 'src/common/interceptors/user-scoped-cache.interceptor';
 import {
     ApiBadRequestResponse,
     ApiBearerAuth,
@@ -49,7 +50,7 @@ export class CitasMedicoController {
     constructor(private readonly citasService: CitasService) {}
 
     @Get('proximas')
-    @UseInterceptors(CacheInterceptor)
+    @UseInterceptors(UserScopedCacheInterceptor)
     @CacheTTL(300000)
     @ApiOperation({
         summary: 'Obtener las próximas citas del médico autenticado',
@@ -82,7 +83,7 @@ export class CitasMedicoController {
     }
 
     @Get('all')
-    @UseInterceptors(CacheInterceptor)
+    @UseInterceptors(UserScopedCacheInterceptor)
     @CacheTTL(300000)
     @ApiOperation({
         summary: 'Listar todas las citas del médico autenticado',
@@ -151,7 +152,7 @@ export class CitasMedicoController {
     }
 
     @Get('fecha')
-    @UseInterceptors(CacheInterceptor)
+    @UseInterceptors(UserScopedCacheInterceptor)
     @CacheTTL(60000)
     @ApiOperation({
         summary: 'Filtrar citas del médico por fecha',
@@ -201,7 +202,7 @@ export class CitasMedicoController {
     }
 
     @Get(':id')
-    @UseInterceptors(CacheInterceptor)
+    @UseInterceptors(UserScopedCacheInterceptor)
     @CacheTTL(600000)
     @ApiOperation({
         summary: 'Obtener detalle de una cita específica (médico)',

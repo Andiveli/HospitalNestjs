@@ -4,7 +4,11 @@ import { AuthModule } from '../auth/auth.module';
 import { CitasModule } from '../citas/citas.module';
 import { CitaEntity } from '../citas/entities/cita.entity';
 import { PeopleModule } from '../people/people.module';
-import { InvitacionesController, VideoRoomsController } from './controllers';
+import {
+    InvitacionesController,
+    VideoRoomsController,
+    WebSocketDocsController,
+} from './controllers';
 import {
     EstadoSesionEntity,
     InvitacionVideollamadaEntity,
@@ -15,6 +19,7 @@ import {
     TipoMensajeEntity,
 } from './entities';
 import { VideoLlamadaGateway } from './gateways';
+import { SesionExpiracionJob } from './jobs';
 import {
     InvitacionVideollamadaRepository,
     MensajeChatRepository,
@@ -56,16 +61,25 @@ import { InvitacionesService, VideollamadaService } from './services';
         PeopleModule,
     ],
 
-    controllers: [InvitacionesController, VideoRoomsController],
+    controllers: [
+        InvitacionesController,
+        VideoRoomsController,
+        WebSocketDocsController,
+    ],
 
     providers: [
+        // Repositories
         SesionConsultaRepository,
         ParticipanteSesionRepository,
         MensajeChatRepository,
         InvitacionVideollamadaRepository,
+        // Services
         VideollamadaService,
         InvitacionesService,
+        // Gateway
         VideoLlamadaGateway,
+        // Jobs
+        SesionExpiracionJob,
     ],
 
     exports: [

@@ -11,6 +11,10 @@ import { IS_PUBLIC_KEY } from 'src/common/decorators/public.decorator';
 /**
  * Guard de autenticación JWT que protege las rutas privadas
  * Permite omitir autenticación en rutas decoradas con @Public()
+ *
+ * NOTA: Este guard detecta conexiones WebSocket y las omite ya que
+ * la autenticación de WebSocket se maneja de forma diferente
+ * (generalmente mediante tokens en el handshake o en los mensajes)
  */
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -27,6 +31,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
      * @returns true si la ruta es pública o si la autenticación es exitosa
      */
     canActivate(context: ExecutionContext) {
+        // Omitir autenticación JWT para WebSocket - se maneja en el gateway
+        const contextType = context.getType();
+        if (contextType === 'ws') {
+            return true;
+        }
+
         const isPublic = this.reflector.getAllAndOverride<boolean>(
             IS_PUBLIC_KEY,
             [context.getHandler(), context.getClass()],

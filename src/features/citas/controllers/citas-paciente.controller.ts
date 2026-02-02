@@ -1,14 +1,9 @@
-import {
-    CACHE_MANAGER,
-    CacheInterceptor,
-    CacheTTL,
-} from '@nestjs/cache-manager';
+import { CacheTTL } from '@nestjs/cache-manager';
 import {
     Body,
     Controller,
     Delete,
     Get,
-    Inject,
     Param,
     ParseIntPipe,
     Post,
@@ -18,6 +13,7 @@ import {
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
+import { UserScopedCacheInterceptor } from 'src/common/interceptors/user-scoped-cache.interceptor';
 import {
     ApiBadRequestResponse,
     ApiBearerAuth,
@@ -31,7 +27,6 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Cache } from 'cache-manager';
 import UserRequest from 'src/features/people/people.request';
 import { Roles } from 'src/features/roles/roles.decorator';
 import { Rol } from 'src/features/roles/roles.enum';
@@ -54,6 +49,7 @@ import {
 import { CreateCitaDto } from '../dto/create-cita.dto';
 import { PaginationDto } from '../dto/pagination.dto';
 import { UpdateCitaDto } from '../dto/update-cita.dto';
+import { CitasCacheService } from '../services/citas-cache.service';
 
 @ApiTags('Citas - Paciente')
 @ApiBearerAuth()
@@ -63,31 +59,8 @@ import { UpdateCitaDto } from '../dto/update-cita.dto';
 export class CitasPacienteController {
     constructor(
         private readonly citasService: CitasService,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        private readonly citasCacheService: CitasCacheService,
     ) {}
-
-    /**
-     * Invalida una clave específica del cache
-     */
-    private async invalidateCache(key: string): Promise<void> {
-        await this.cacheManager.del(key);
-    }
-
-    /**
-     * Invalida todas las claves que coincidan con el patrón
-     * Nota: Redis no soporta del con patrones directamente,
-     * así que usamos un enfoque de clave marcadora
-     */
-    private async invalidateCachePattern(pattern: string): Promise<void> {
-        // En una implementación completa con Redis, usaríamos SCAN + DEL
-        // Por ahora, invalidamos claves específicas conocidas
-        const baseKey = pattern.replace(':*', '');
-        for (let page = 1; page <= 10; page++) {
-            for (const limit of [10, 20, 50, 100]) {
-                await this.cacheManager.del(`${baseKey}:${page}:${limit}`);
-            }
-        }
-    }
 
     @Post()
     @ApiOperation({
@@ -131,8 +104,15 @@ export class CitasPacienteController {
             pacienteId,
         );
 
-        // Invalidar cache de citas del paciente
-        await this.invalidateCachePattern('citas:paciente:*');
+        // Invalidar caché del paciente, médico y disponibilidad
+        const fecha = new Date(cita.fechaHoraInicio)
+            .toISOString()
+            .split('T')[0];
+        await this.citasCacheService.invalidateOnCitaCreated(
+            pacienteId,
+            cita.medico.id,
+            fecha,
+        );
 
         return {
             message: 'Cita creada exitosamente',
@@ -141,7 +121,7 @@ export class CitasPacienteController {
     }
 
     @Get('proximas')
-    @UseInterceptors(CacheInterceptor)
+    @UseInterceptors(UserScopedCacheInterceptor)
     @CacheTTL(300000)
     @ApiOperation({
         summary: 'Obtener las próximas citas del paciente',
@@ -177,7 +157,7 @@ export class CitasPacienteController {
     }
 
     @Get('recientes')
-    @UseInterceptors(CacheInterceptor)
+    @UseInterceptors(UserScopedCacheInterceptor)
     @CacheTTL(300000)
     @ApiOperation({
         summary: 'Obtener citas atendidas recientes',
@@ -214,7 +194,7 @@ export class CitasPacienteController {
     }
 
     @Get('pendientes')
-    @UseInterceptors(CacheInterceptor)
+    @UseInterceptors(UserScopedCacheInterceptor)
     @CacheTTL(300000)
     @ApiOperation({
         summary: 'Listar todas las citas pendientes',
@@ -276,7 +256,7 @@ export class CitasPacienteController {
     }
 
     @Get('atendidas')
-    @UseInterceptors(CacheInterceptor)
+    @UseInterceptors(UserScopedCacheInterceptor)
     @CacheTTL(300000)
     @ApiOperation({
         summary: 'Listar todas las citas atendidas',
@@ -338,7 +318,7 @@ export class CitasPacienteController {
     }
 
     @Get(':id')
-    @UseInterceptors(CacheInterceptor)
+    @UseInterceptors(UserScopedCacheInterceptor)
     @CacheTTL(600000)
     @ApiOperation({
         summary: 'Obtener detalle de una cita específica',
@@ -417,15 +397,20 @@ export class CitasPacienteController {
         @Request() req: UserRequest,
     ): Promise<CitaApiResponseDto> {
         const pacienteId = req.user.id;
-        const cita = await this.citasService.updateCita(
+        const { cita, cacheMetadata } = await this.citasService.updateCita(
             id,
             updateCitaDto,
             pacienteId,
         );
 
-        // Invalidar cache de citas del paciente
-        await this.invalidateCachePattern('citas:paciente:*');
-        await this.invalidateCache(`cita:${id}`);
+        // Invalidar caché del paciente, médico y disponibilidad (fecha anterior y nueva)
+        await this.citasCacheService.invalidateOnCitaUpdated(
+            pacienteId,
+            cacheMetadata.medicoId,
+            id,
+            cacheMetadata.fechaAnterior,
+            cacheMetadata.fechaNueva,
+        );
 
         return {
             message: 'Cita actualizada exitosamente',
@@ -468,9 +453,13 @@ export class CitasPacienteController {
         const pacienteId = req.user.id;
         const result = await this.citasService.deleteCita(id, pacienteId);
 
-        // Invalidar cache de citas del paciente
-        await this.invalidateCachePattern('citas:paciente:*');
-        await this.invalidateCache(`cita:${id}`);
+        // Invalidar caché del paciente, médico y disponibilidad
+        await this.citasCacheService.invalidateOnCitaCancelled(
+            pacienteId,
+            result.medicoId,
+            id,
+            result.fecha,
+        );
 
         return {
             message: result.message,

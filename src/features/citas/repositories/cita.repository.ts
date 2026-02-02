@@ -88,7 +88,7 @@ export class CitaRepository {
         limit: number,
     ): Promise<CitaEntity[]> {
         const fecha = new Date();
-        fecha.setMinutes(fecha.getMinutes() + 10);
+        fecha.setMinutes(fecha.getMinutes() - 10);
         return this.ormRepository.find({
             where: {
                 paciente: { usuarioId: pacienteId },
@@ -393,7 +393,7 @@ export class CitaRepository {
         limit: number,
     ): Promise<CitaEntity[]> {
         const fecha = new Date();
-        fecha.setMinutes(fecha.getMinutes() + 10);
+        fecha.setMinutes(fecha.getMinutes() - 10);
         return this.ormRepository.find({
             where: {
                 medico: { usuarioId: medicoId },
