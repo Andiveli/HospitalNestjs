@@ -729,4 +729,83 @@ export class VideollamadaService {
 
         return { participante: nuevoParticipante, citaId };
     }
+
+    /**
+     * Obtiene el tiempo de participación de un usuario en la videollamada
+     * Busca por usuarioId y rol, calcula la diferencia entre fechaHoraUnion y fechaHoraSalida
+     *
+     * @param citaId - ID de la cita
+     * @param usuarioId - ID del usuario (médico o paciente)
+     * @param rolNombre - Nombre del rol a buscar ('medico', 'paciente', 'invitado')
+     * @returns Objeto con duración en minutos y si el usuario está activo
+     */
+    async obtenerTiempoParticipacion(
+        citaId: number,
+        usuarioId: number,
+        rolNombre: 'medico' | 'paciente',
+    ): Promise<{
+        minutos: number;
+        estaActivo: boolean;
+        fechaUnion: Date | null;
+        fechaSalida: Date | null;
+    }> {
+        // 1. Verificar que la sesión existe
+        const sesion = await this.sesionRepository.findByCitaId(citaId);
+
+        if (!sesion) {
+            throw new NotFoundException(
+                `Sesión para cita ID ${citaId} no encontrada`,
+            );
+        }
+
+        // 2. Buscar el participante por usuarioId, sesión y rol
+        const rol = await this.rolSesionRepository.findOne({
+            where: { nombre: rolNombre },
+        });
+
+        if (!rol) {
+            throw new NotFoundException(`Rol "${rolNombre}" no encontrado`);
+        }
+
+        // Buscar participante del usuario en la sesión
+        const participante =
+            await this.participanteRepository.findByUsuarioAndCita(
+                usuarioId,
+                citaId,
+            );
+
+        if (!participante || participante.rol.id !== rol.id) {
+            throw new NotFoundException(
+                `No se encontró participante con rol "${rolNombre}" para el usuario ${usuarioId} en la cita ${citaId}`,
+            );
+        }
+
+        // 3. Calcular duración
+        const fechaUnion = participante.fechaHoraUnion;
+        const fechaSalida = participante.fechaHoraSalida;
+        const estaActivo = fechaSalida === null;
+
+        let minutos = 0;
+
+        if (estaActivo) {
+            // Si sigue activo, calcular hasta ahora
+            const ahora = new Date();
+            minutos = (ahora.getTime() - fechaUnion.getTime()) / (1000 * 60);
+        } else if (fechaSalida) {
+            // Si ya salió, calcular duración exacta
+            minutos =
+                (fechaSalida.getTime() - fechaUnion.getTime()) / (1000 * 60);
+        }
+
+        this.logger.log(
+            `Usuario ${usuarioId} (rol: ${rolNombre}) estuvo ${Math.floor(minutos)} minutos en la cita ${citaId}. Activo: ${estaActivo}`,
+        );
+
+        return {
+            minutos: Math.floor(minutos),
+            estaActivo,
+            fechaUnion,
+            fechaSalida,
+        };
+    }
 }

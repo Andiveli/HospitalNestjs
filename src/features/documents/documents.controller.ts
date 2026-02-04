@@ -229,68 +229,11 @@ export class DocumentsController {
      * Obtiene todos los tipos de documento disponibles
      * @returns Lista de tipos de documento disponibles
      */
-    @ApiOperation({
-        summary: 'Obtener tipos de documento',
-        description:
-            'Retorna todos los tipos de documento disponibles para el filtrado',
-    })
-    @ApiOkResponse({
-        type: [TipoDocumentoEntity],
-        description: 'Tipos de documento obtenidos exitosamente',
-    })
-    @ApiUnauthorizedResponse({
-        type: UnauthorizedErrorResponseDto,
-        description: 'Usuario no autenticado',
-    })
-    @ApiInternalServerErrorResponse({
-        type: InternalServerErrorResponseDto,
-        description: 'Error interno del servidor',
-    })
-    /**
-     * Elimina un documento del sistema
-     * @param documentId - ID del documento a eliminar
-     */
-    @Delete(':documentId')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({
-        summary: 'Eliminar documento',
-        description:
-            'Elimina un documento tanto de S3 como de la base de datos',
-    })
-    @ApiParam({
-        name: 'documentId',
-        description: 'ID del documento a eliminar',
-        example: 1,
-    })
-    @ApiResponse({
-        status: 204,
-        description: 'Documento eliminado exitosamente',
-    })
-    @ApiResponse({
-        status: 404,
-        type: NotFoundErrorResponseDto,
-        description: 'Documento no encontrado',
-    })
-    @ApiResponse({
-        status: 401,
-        type: UnauthorizedErrorResponseDto,
-        description: 'Usuario no autenticado',
-    })
-    @ApiResponse({
-        status: 500,
-        type: InternalServerErrorResponseDto,
-        description: 'Error al eliminar documento de S3 o de la base de datos',
-    })
-    async deleteDocument(
-        @Param('documentId', ParseIntPipe) documentId: number,
-    ): Promise<void> {
-        await this.documentsService.deleteDocument(documentId);
-    }
-
-    /**
-     * Obtiene todos los tipos de documento disponibles
-     * @returns Lista de tipos de documento disponibles
-     */
+    @Get('tipos')
+    @Roles(Rol.Paciente, Rol.Medico)
+    @UseInterceptors(CacheInterceptor)
+    @CacheTTL(3600000) // 1 hora - Los tipos de documento raramente cambian
+    @HttpCode(HttpStatus.OK)
     @ApiOperation({
         summary: 'Obtener tipos de documento',
         description:
@@ -308,12 +251,46 @@ export class DocumentsController {
         type: InternalServerErrorResponseDto,
         description: 'Error interno del servidor',
     })
-    @Roles(Rol.Paciente)
-    @UseInterceptors(CacheInterceptor)
-    @CacheTTL(3600000) // 1 hora - Los tipos de documento raramente cambian
-    @Get('tipos')
-    @HttpCode(HttpStatus.OK)
     async getTiposDocumento(): Promise<TipoDocumentoEntity[]> {
         return await this.documentsService.getTiposDocumento();
+    }
+
+    /**
+     * Elimina un documento del sistema
+     * @param documentId - ID del documento a eliminar
+     */
+    @Delete(':documentId')
+    @Roles(Rol.Medico)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @ApiOperation({
+        summary: 'Eliminar documento',
+        description:
+            'Elimina un documento tanto de S3 como de la base de datos',
+    })
+    @ApiParam({
+        name: 'documentId',
+        description: 'ID del documento a eliminar',
+        example: 1,
+    })
+    @ApiResponse({
+        status: 204,
+        description: 'Documento eliminado exitosamente',
+    })
+    @ApiNotFoundResponse({
+        type: NotFoundErrorResponseDto,
+        description: 'Documento no encontrado',
+    })
+    @ApiUnauthorizedResponse({
+        type: UnauthorizedErrorResponseDto,
+        description: 'Usuario no autenticado',
+    })
+    @ApiInternalServerErrorResponse({
+        type: InternalServerErrorResponseDto,
+        description: 'Error al eliminar documento de S3 o de la base de datos',
+    })
+    async deleteDocument(
+        @Param('documentId', ParseIntPipe) documentId: number,
+    ): Promise<void> {
+        await this.documentsService.deleteDocument(documentId);
     }
 }

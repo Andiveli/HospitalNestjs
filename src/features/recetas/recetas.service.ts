@@ -52,7 +52,7 @@ export class RecetasService {
 
         const registroAtencion = await this.registroAtencionRepository.findOne({
             where: { citaId: registroAtencionId },
-            relations: ['cita', 'cita.estado', 'cita.medico'],
+            relations: ['cita', 'cita.estado', 'cita.medico', 'cita.paciente'],
         });
 
         if (!registroAtencion) {
