@@ -14,12 +14,14 @@ import {
     ApiBadRequestResponse,
     ApiConflictResponse,
     ApiCreatedResponse,
+    ApiForbiddenResponse,
     ApiNotFoundResponse,
     ApiOkResponse,
     ApiOperation,
     ApiParam,
     ApiQuery,
     ApiTags,
+    ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Roles } from '../roles/roles.decorator';
 import { Rol } from '../roles/roles.enum';
@@ -62,6 +64,12 @@ export class EspecialidadController {
     @ApiConflictResponse({
         description: 'Ya existe una especialidad con ese nombre',
     })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - Token inválido o ausente',
+    })
+    @ApiForbiddenResponse({
+        description: 'Prohibido - Se requiere rol de administrador',
+    })
     /**
      * Crea una nueva especialidad médica
      * @param createDto Datos para crear la especialidad
@@ -83,6 +91,12 @@ export class EspecialidadController {
     @ApiOkResponse({
         description: 'Especialidades recuperadas correctamente',
         type: GetEspecialidadesResponseDto,
+    })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - Token inválido o ausente',
+    })
+    @ApiForbiddenResponse({
+        description: 'Prohibido - Se requiere rol de administrador',
     })
     @ApiQuery({
         name: 'page',
@@ -108,8 +122,8 @@ export class EspecialidadController {
         @Query('limit') limit?: number,
     ): Promise<GetEspecialidadesResponseDto> {
         return await this.especialidadService.getEspecialidades(
-            page ? parseInt(page.toString()) : 1,
-            limit ? parseInt(limit.toString()) : 10,
+            page ?? 1,
+            limit ?? 10,
         );
     }
 
@@ -127,6 +141,12 @@ export class EspecialidadController {
     @ApiNotFoundResponse({
         description: 'Especialidad no encontrada',
     })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - Token inválido o ausente',
+    })
+    @ApiForbiddenResponse({
+        description: 'Prohibido - Se requiere rol de administrador',
+    })
     @ApiParam({
         name: 'id',
         description: 'ID de la especialidad',
@@ -140,9 +160,7 @@ export class EspecialidadController {
     async getEspecialidadById(
         @Param('id') id: number,
     ): Promise<CreateEspecialidadResponseDto> {
-        return await this.especialidadService.getEspecialidadById(
-            parseInt(id.toString()),
-        );
+        return await this.especialidadService.getEspecialidadById(id);
     }
 
     @Put(':id')
@@ -162,6 +180,12 @@ export class EspecialidadController {
     @ApiConflictResponse({
         description: 'Ya existe una especialidad con ese nombre',
     })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - Token inválido o ausente',
+    })
+    @ApiForbiddenResponse({
+        description: 'Prohibido - Se requiere rol de administrador',
+    })
     @ApiParam({
         name: 'id',
         description: 'ID de la especialidad',
@@ -177,10 +201,7 @@ export class EspecialidadController {
         @Param('id') id: number,
         @Body() updateDto: UpdateEspecialidadDto,
     ): Promise<CreateEspecialidadResponseDto> {
-        return await this.especialidadService.updateEspecialidad(
-            parseInt(id.toString()),
-            updateDto,
-        );
+        return await this.especialidadService.updateEspecialidad(id, updateDto);
     }
 
     @Delete(':id')
@@ -188,7 +209,8 @@ export class EspecialidadController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
         summary: 'Eliminar especialidad',
-        description: 'Elimina una especialidad médica del sistema',
+        description:
+            'Elimina una especialidad médica del sistema (soft delete)',
     })
     @ApiOkResponse({
         description: 'Especialidad eliminada correctamente',
@@ -205,6 +227,15 @@ export class EspecialidadController {
     @ApiNotFoundResponse({
         description: 'Especialidad no encontrada',
     })
+    @ApiBadRequestResponse({
+        description: 'La especialidad ya se encuentra inactiva',
+    })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - Token inválido o ausente',
+    })
+    @ApiForbiddenResponse({
+        description: 'Prohibido - Se requiere rol de administrador',
+    })
     @ApiParam({
         name: 'id',
         description: 'ID de la especialidad',
@@ -218,8 +249,6 @@ export class EspecialidadController {
     async deleteEspecialidad(
         @Param('id') id: number,
     ): Promise<{ message: string }> {
-        return await this.especialidadService.deleteEspecialidad(
-            parseInt(id.toString()),
-        );
+        return await this.especialidadService.deleteEspecialidad(id);
     }
 }

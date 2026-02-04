@@ -124,15 +124,12 @@ export class EspecialidadService {
             );
 
         if (updateDto.nombre && updateDto.nombre !== existing.nombre) {
-            const nameExists =
-                await this.especialidadRepository.especialidadRepository.findOne(
-                    {
-                        where: { nombre: updateDto.nombre },
-                    },
-                );
+            const nameExists = await this.especialidadRepository.findByName(
+                updateDto.nombre,
+            );
             if (nameExists) {
                 throw new ConflictException(
-                    'Ya existe una especialidad con ese nombre',
+                    'Ya existe una especialidad activa con ese nombre',
                 );
             }
         }
@@ -148,7 +145,7 @@ export class EspecialidadService {
     }
 
     /**
-     * Elimina una especialidad del sistema
+     * Elimina una especialidad del sistema (soft delete)
      * @param id ID de la especialidad a eliminar
      * @returns Mensaje de confirmación
      * @throws NotFoundException Si no se encuentra la especialidad
@@ -157,6 +154,12 @@ export class EspecialidadService {
         const especialidad = await this.especialidadRepository.findById(id);
         if (!especialidad)
             throw new NotFoundException('Especialidad no encontrada');
+
+        if (!especialidad.activo) {
+            throw new BadRequestException(
+                'La especialidad ya se encuentra inactiva',
+            );
+        }
 
         await this.especialidadRepository.delete(id);
 

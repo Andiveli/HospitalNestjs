@@ -21,6 +21,9 @@ export class EspecialidadEntity {
     @Column({ name: 'descripcion', length: 255, nullable: true })
     descripcion!: string;
 
+    @Column({ name: 'activo', default: true })
+    activo!: boolean;
+
     @ManyToMany(() => MedicoEntity, (medico) => medico.especialidades)
     @JoinTable({
         name: 'medicos_especialidades',

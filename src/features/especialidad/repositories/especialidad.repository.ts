@@ -33,7 +33,7 @@ export class EspecialidadRepository {
     }
 
     /**
-     * Obtiene una lista paginada de especialidades
+     * Obtiene una lista paginada de especialidades activas
      * @param page Número de página (por defecto 1)
      * @param limit Límite de resultados por página (por defecto 10)
      * @returns Tupla con array de especialidades y total de registros
@@ -43,29 +43,32 @@ export class EspecialidadRepository {
         limit: number = 10,
     ): Promise<[EspecialidadEntity[], number]> {
         return await this.especialidadRepository.findAndCount({
+            where: { activo: true },
             skip: (page - 1) * limit,
             take: limit,
         });
     }
 
     /**
-     * Busca una especialidad por su ID
+     * Busca una especialidad por su ID (solo activas)
      * @param id ID de la especialidad
      * @returns Especialidad encontrada o null
      */
     async findById(id: number): Promise<EspecialidadEntity | null> {
         return await this.especialidadRepository.findOne({
-            where: { id },
+            where: { id, activo: true },
         });
     }
 
     /**
-     * Busca una especialidad por su nombre
+     * Busca una especialidad por su nombre (solo activas)
      * @param nombre Nombre de la especialidad
      * @returns Especialidad encontrada o null
      */
     async findByName(nombre: string): Promise<EspecialidadEntity | null> {
-        return await this.especialidadRepository.findOne({ where: { nombre } });
+        return await this.especialidadRepository.findOne({
+            where: { nombre, activo: true },
+        });
     }
 
     /**
@@ -83,11 +86,11 @@ export class EspecialidadRepository {
     }
 
     /**
-     * Elimina una especialidad por su ID
+     * Elimina una especialidad por su ID (soft delete)
      * @param id ID de la especialidad a eliminar
      */
     async delete(id: number): Promise<void> {
-        await this.especialidadRepository.delete(id);
+        await this.especialidadRepository.update(id, { activo: false });
     }
 
     /**
