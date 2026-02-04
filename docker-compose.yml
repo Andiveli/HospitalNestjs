@@ -22,9 +22,8 @@ services:
             # Database (uses your .env DATABASE_URL - e.g., Supabase)
             - DB_TYPE=${DB_TYPE:-postgres}
             - DATABASE_URL=${DATABASE_URL}
-            # Redis
-            - REDIS_HOST=redis
-            - REDIS_PORT=6379
+            # Redis (uses REDIS_URL from .env for external services like Upstash)
+            - REDIS_URL=${REDIS_URL}
             # JWT
             - JWT_SECRET=${JWT_SECRET}
             # Frontend
@@ -43,9 +42,6 @@ services:
             - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
             # Swagger
             - SWAGGER_TOKEN=${SWAGGER_TOKEN}
-        depends_on:
-            redis:
-                condition: service_healthy
         networks:
             - hospital-network
         healthcheck:

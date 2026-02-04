@@ -37,27 +37,33 @@ import { VideollamadasModule } from './features/videollamadas/videollamadas.modu
         CacheModule.registerAsync({
             isGlobal: true,
             imports: [ConfigModule],
-            useFactory: async (configService: ConfigService) => ({
-                ttl: 60 * 1000,
-                store: await redisStore({
-                    socket: {
-                        host:
-                            configService.get<string>('REDIS_HOST') ||
-                            'localhost',
-                        port: configService.get<number>('REDIS_PORT') || 6379,
-                    },
-                }),
-            }),
+            useFactory: async (configService: ConfigService) => {
+                const redisUrl = configService.get<string>('REDIS_URL');
+                return {
+                    ttl: 60 * 1000,
+                    store: await redisStore({
+                        url: redisUrl,
+                        socket: !redisUrl
+                            ? {
+                                  host:
+                                      configService.get<string>('REDIS_HOST') ||
+                                      'localhost',
+                                  port:
+                                      configService.get<number>('REDIS_PORT') ||
+                                      6379,
+                              }
+                            : undefined,
+                    }),
+                };
+            },
             inject: [ConfigService],
         }),
         BullModule.forRootAsync({
             imports: [ConfigModule],
-            useFactory: async (configService: ConfigService) => ({
-                connection: {
-                    host:
-                        configService.get<string>('REDIS_HOST') || 'localhost',
-                    port: configService.get<number>('REDIS_PORT') || 6379,
-                },
+            useFactory: (configService: ConfigService) => ({
+                connection: configService.get('REDIS_URL')
+                    ? { url: configService.get('REDIS_URL') }
+                    : { host: 'redis', port: 6379 },
             }),
             inject: [ConfigService],
         }),
@@ -90,6 +96,7 @@ import { VideollamadasModule } from './features/videollamadas/videollamadas.modu
                 // Redis
                 REDIS_HOST: Joi.string().default('localhost'),
                 REDIS_PORT: Joi.number().default(6379),
+                REDIS_URL: Joi.string().optional(),
             }),
         }),
         TypeOrmModule.forRootAsync({
