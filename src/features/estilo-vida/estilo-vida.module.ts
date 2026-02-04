@@ -6,8 +6,8 @@ import { EstiloVidaService } from './estilo-vida.service';
 
 @Module({
     imports: [TypeOrmModule.forFeature([EstiloVidaEntity])],
-    exports: [TypeOrmModule],
     controllers: [EstiloVidaController],
     providers: [EstiloVidaService],
+    exports: [EstiloVidaService],
 })
 export class EstiloVidaModule {}
