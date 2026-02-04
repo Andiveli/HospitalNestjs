@@ -31,6 +31,9 @@ export class MedicoEntity {
     @Column({ name: 'licencia_medica', length: 50, nullable: true })
     licenciaMedica!: string;
 
+    @Column({ name: 'activo', default: true })
+    activo!: boolean;
+
     @OneToOne(() => PeopleEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'usuario_id', referencedColumnName: 'id' })
     persona!: PeopleEntity;

@@ -30,18 +30,9 @@ import {
     CreateMedicoResponseDto,
     GetMedicosResponseDto,
 } from './dto/medico-response.dto';
+import { EspecialidadCatalogoDto } from './dto/especialidad-catalogo.dto';
+import { DiaCatalogoDto } from './dto/dia-catalogo.dto';
 import { MedicosService } from './medicos.service';
-
-class EspecialidadCatalogoDto {
-    id!: number;
-    nombre!: string;
-    descripcion?: string;
-}
-
-class DiaAtencionCatalogoDto {
-    id!: number;
-    nombre!: string;
-}
 
 @ApiTags('Médicos')
 @Controller('medicos')
@@ -83,7 +74,7 @@ export class MedicosController {
     }
 
     @Get()
-    @Roles(Rol.Admin, Rol.Medico)
+    @Roles(Rol.Admin)
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
         summary: 'Obtener lista de médicos',
@@ -101,7 +92,7 @@ export class MedicosController {
         description: 'No autorizado - Token inválido o ausente',
     })
     @ApiForbiddenResponse({
-        description: 'Prohibido - Se requiere rol de administrador o médico',
+        description: 'Prohibido - Se requiere rol de administrador',
     })
     @ApiQuery({
         name: 'page',
@@ -119,14 +110,11 @@ export class MedicosController {
         @Query('page') page?: number,
         @Query('limit') limit?: number,
     ): Promise<GetMedicosResponseDto> {
-        return await this.medicosService.getMedicos(
-            page ? parseInt(page.toString()) : 1,
-            limit ? parseInt(limit.toString()) : 10,
-        );
+        return await this.medicosService.getMedicos(page ?? 1, limit ?? 10);
     }
 
     @Get(':id')
-    @Roles(Rol.Admin, Rol.Medico)
+    @Roles(Rol.Admin)
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
         summary: 'Obtener médico por ID',
@@ -146,7 +134,7 @@ export class MedicosController {
         description: 'No autorizado - Token inválido o ausente',
     })
     @ApiForbiddenResponse({
-        description: 'Prohibido - Se requiere rol de administrador o médico',
+        description: 'Prohibido - Se requiere rol de administrador',
     })
     @ApiParam({
         name: 'id',
@@ -156,7 +144,7 @@ export class MedicosController {
     async getMedicoById(
         @Param('id') id: number,
     ): Promise<CreateMedicoResponseDto> {
-        return await this.medicosService.getMedicoById(parseInt(id.toString()));
+        return await this.medicosService.getMedicoById(id);
     }
 
     @Put(':id')
@@ -193,15 +181,11 @@ export class MedicosController {
         @Param('id') id: number,
         @Body() assignMedicoDto: AssignMedicoDto,
     ): Promise<CreateMedicoResponseDto> {
-        // Asegurarse de que el DTO contenga el ID correcto
         const updateDto = {
             ...assignMedicoDto,
-            usuarioId: parseInt(id.toString()),
+            usuarioId: id,
         };
-        return await this.medicosService.updateMedico(
-            parseInt(id.toString()),
-            updateDto,
-        );
+        return await this.medicosService.updateMedico(id, updateDto);
     }
 
     @Delete(':id')
@@ -241,7 +225,7 @@ export class MedicosController {
         type: Number,
     })
     async deleteMedico(@Param('id') id: number): Promise<{ message: string }> {
-        return await this.medicosService.deleteMedico(parseInt(id.toString()));
+        return await this.medicosService.deleteMedico(id);
     }
 
     @Get('especialidades/disponibles')
@@ -276,7 +260,7 @@ export class MedicosController {
     })
     @ApiOkResponse({
         description: 'Días recuperados correctamente',
-        type: [DiaAtencionCatalogoDto],
+        type: [DiaCatalogoDto],
     })
     @ApiUnauthorizedResponse({
         description: 'No autorizado - Token inválido o ausente',
@@ -284,7 +268,7 @@ export class MedicosController {
     @ApiForbiddenResponse({
         description: 'Prohibido - Se requiere rol de administrador',
     })
-    async getDiasDisponibles(): Promise<DiaAtencionCatalogoDto[]> {
+    async getDiasDisponibles(): Promise<DiaCatalogoDto[]> {
         return await this.medicosService.getDiasDisponibles();
     }
 }

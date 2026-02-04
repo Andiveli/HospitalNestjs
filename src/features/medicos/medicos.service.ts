@@ -56,7 +56,7 @@ export class MedicosService {
             );
         }
 
-        // Validar especialidades existentes
+        // Validar especialidades existentes y activas
         for (const esp of especialidades) {
             const especialidad =
                 await this.medicoRepository.findEspecialidadByNombre(
@@ -64,7 +64,7 @@ export class MedicosService {
                 );
             if (!especialidad) {
                 throw new BadRequestException(
-                    `La especialidad con nombre '${esp.especialidadNombre}' no existe`,
+                    `La especialidad '${esp.especialidadNombre}' no existe o no está activa`,
                 );
             }
         }
@@ -189,7 +189,7 @@ export class MedicosService {
         const { licenciaMedica, pasaporte, especialidades, horarios } =
             assignMedicoDto;
 
-        // Validar especialidades existentes
+        // Validar especialidades existentes y activas
         for (const esp of especialidades) {
             const especialidad =
                 await this.medicoRepository.findEspecialidadByNombre(
@@ -197,7 +197,7 @@ export class MedicosService {
                 );
             if (!especialidad) {
                 throw new BadRequestException(
-                    `La especialidad con nombre '${esp.especialidadNombre}' no existe`,
+                    `La especialidad '${esp.especialidadNombre}' no existe o no está activa`,
                 );
             }
         }
@@ -277,17 +277,16 @@ export class MedicosService {
             throw new NotFoundException('Médico no encontrado');
         }
 
+        if (!medico.activo) {
+            throw new BadRequestException('El médico ya se encuentra inactivo');
+        }
+
         try {
-            // Eliminar especialidades y horarios
-            await this.medicoRepository.removeEspecialidadesFromMedico(
-                usuarioId,
-            );
-            await this.medicoRepository.removeHorariosFromMedico(usuarioId);
+            // Soft delete: actualizar campo activo a false
+            medico.activo = false;
+            await this.medicoRepository.medicoRepository.save(medico);
 
-            // Eliminar el médico
-            await this.medicoRepository.medicoRepository.remove(medico);
-
-            // Quitar rol de médico (opcional, dependiendo de los requisitos)
+            // Quitar rol de médico
             await this.removeMedicoRole(medico.persona);
 
             return { message: 'Médico eliminado correctamente' };

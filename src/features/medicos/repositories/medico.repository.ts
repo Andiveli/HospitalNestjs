@@ -46,7 +46,7 @@ export class MedicoRepository {
         usuarioId: number,
     ): Promise<MedicoEntity | null> {
         return await this.medicoRepository.findOne({
-            where: { usuarioId },
+            where: { usuarioId, activo: true },
             relations: [
                 'persona',
                 'especialidades',
@@ -65,6 +65,7 @@ export class MedicoRepository {
         limit: number = 10,
     ): Promise<[MedicoEntity[], number]> {
         return await this.medicoRepository.findAndCount({
+            where: { activo: true },
             relations: [
                 'persona',
                 'especialidades',
@@ -136,19 +137,21 @@ export class MedicoRepository {
     }
 
     async getAvailableEspecialidades(): Promise<EspecialidadEntity[]> {
-        return await this.especialidadRepository.find();
-    }
-
-    async getAvailableDias(): Promise<DiaAtencionEntity[]> {
-        return await this.diaRepository.find();
+        return await this.especialidadRepository.find({
+            where: { activo: true },
+        });
     }
 
     async findEspecialidadByNombre(
         nombre: string,
     ): Promise<EspecialidadEntity | null> {
         return await this.especialidadRepository.findOne({
-            where: { nombre },
+            where: { nombre, activo: true },
         });
+    }
+
+    async getAvailableDias(): Promise<DiaAtencionEntity[]> {
+        return await this.diaRepository.find();
     }
 
     async findDiaByNombre(nombre: string): Promise<DiaAtencionEntity | null> {
