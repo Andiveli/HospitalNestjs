@@ -14,11 +14,20 @@ import { MedicoEntity } from '../medicos/medicos.entity';
 import { PacientesEntity } from '../pacientes/pacientes.entity';
 import { RecetasService } from '../recetas/recetas.service';
 import {
+    SesionConsultaRepository,
+    ParticipanteSesionRepository,
+} from '../videollamadas/repositories';
+import { RolSesionEntity } from '../videollamadas/entities/rol-sesion.entity';
+import {
     CITA_DURACION_MINUTOS,
     CITA_HORAS_MINIMAS_MODIFICACION,
     EstadoCita,
 } from './constants/estado-cita.constants';
-import { CitaDetalladaResponseDto } from './dto/cita-detallada-response.dto';
+import {
+    CitaDetalladaResponseDto,
+    RecetaDetalleDto,
+    MedicamentoRecetaDetalleDto,
+} from './dto/cita-detallada-response.dto';
 import {
     CitaResponseDto,
     MedicoInfoDto,
@@ -51,7 +60,11 @@ export class CitasService {
         private readonly horarioMedicoRepository: Repository<HorarioMedicoEntity>,
         @InjectRepository(ExcepcionHorarioEntity)
         private readonly excepcionHorarioRepository: Repository<ExcepcionHorarioEntity>,
+        @InjectRepository(RolSesionEntity)
+        private readonly rolSesionRepository: Repository<RolSesionEntity>,
         private readonly recetasService: RecetasService,
+        private readonly sesionRepository: SesionConsultaRepository,
+        private readonly participanteRepository: ParticipanteSesionRepository,
     ) {}
 
     /**
@@ -74,6 +87,12 @@ export class CitasService {
         if (!medico) {
             throw new NotFoundException(
                 `Médico con ID ${medicoId} no encontrado`,
+            );
+        }
+
+        if (!medico.activo) {
+            throw new BadRequestException(
+                'No se puede agendar una cita con este médico porque se encuentra inactivo',
             );
         }
 
@@ -100,6 +119,9 @@ export class CitasService {
                 'El médico ya tiene una cita agendada en ese horario. Por favor selecciona otro horario disponible.',
             );
         }
+
+        // Validar que no haya excepción de horario para esta fecha/hora
+        await this.validarExcepcionHorario(medicoId, fechaInicio);
 
         const estadoPendiente = await this.estadoCitaRepository.findOne({
             where: { nombre: EstadoCita.PENDIENTE },
@@ -460,6 +482,50 @@ export class CitasService {
     }
 
     /**
+     * Valida que no exista una excepción de horario para la fecha/hora de la cita
+     * @param medicoId - ID del médico
+     * @param fechaHoraInicio - Fecha y hora de inicio de la cita
+     * @throws ConflictException si hay una excepción que bloquea la fecha/hora
+     */
+    private async validarExcepcionHorario(
+        medicoId: number,
+        fechaHoraInicio: Date,
+    ): Promise<void> {
+        const horaStr = fechaHoraInicio.toTimeString().slice(0, 5);
+
+        const excepcion = await this.excepcionHorarioRepository.findOne({
+            where: {
+                medico: { usuarioId: medicoId },
+                fecha: fechaHoraInicio,
+            },
+        });
+
+        if (!excepcion) {
+            return; // No hay excepción, todo OK
+        }
+
+        // Si es excepción de día completo (sin horas específicas)
+        if (!excepcion.horaInicio && !excepcion.horaFin) {
+            throw new ConflictException(
+                excepcion.motivo ||
+                    'El médico no atiende en esta fecha por una excepción de horario',
+            );
+        }
+
+        // Si es excepción parcial, validar que la hora no esté en el rango
+        if (excepcion.horaInicio && excepcion.horaFin) {
+            if (
+                horaStr >= excepcion.horaInicio &&
+                horaStr < excepcion.horaFin
+            ) {
+                throw new ConflictException(
+                    `El médico no atiende entre ${excepcion.horaInicio} y ${excepcion.horaFin}${excepcion.motivo ? ` (${excepcion.motivo})` : ''}`,
+                );
+            }
+        }
+    }
+
+    /**
      * Mapea una entidad CitaEntity a CitaResponseDto
      * @param cita - Entidad de cita con relaciones cargadas
      * @returns CitaResponseDto
@@ -496,7 +562,7 @@ export class CitasService {
 
     /**
      * Mapea una entidad CitaEntity a CitaDetalladaResponseDto
-     * @param cita - Entidad de cita con TODAS las relaciones cargadas
+     * @param cita - Entidad CitaEntity
      * @returns CitaDetalladaResponseDto
      */
     private async mapToDetalladaResponseDto(
@@ -507,6 +573,33 @@ export class CitasService {
         // Verificar si la cita tiene receta médica
         const tieneReceta = await this.recetasService.citaTieneReceta(cita.id);
 
+        // Mapear la receta si existe
+        let receta: RecetaDetalleDto | undefined;
+        if (tieneReceta && cita.registroAtencion?.recetaMedica) {
+            const recetaEntity = cita.registroAtencion.recetaMedica;
+            const medicamentos: MedicamentoRecetaDetalleDto[] =
+                recetaEntity.medicamentos?.map((rm) => ({
+                    id: rm.medicamento.id,
+                    nombre: rm.medicamento.nombre,
+                    principioActivo: rm.medicamento.principioActivo,
+                    concentracion: rm.medicamento.concentracion,
+                    presentacion: rm.medicamento.presentacion.nombre,
+                    duracion: rm.duracion,
+                    frecuencia: rm.frecuencia,
+                    cantidad: rm.cantidad,
+                    viaAdministracion: rm.viaAdministracion.nombre,
+                    unidadMedida: rm.unidadMedida.nombre,
+                    indicaciones: rm.indicaciones,
+                })) || [];
+
+            receta = {
+                id: recetaEntity.registroAtencionId,
+                fechaHoraCreacion: recetaEntity.fechaHoraCreacion,
+                observaciones: recetaEntity.observaciones,
+                medicamentos,
+            };
+        }
+
         return {
             ...baseDto,
             motivoCita: cita.registroAtencion?.motivoCita || undefined,
@@ -514,6 +607,7 @@ export class CitasService {
             observaciones: cita.registroAtencion?.observaciones || undefined,
             tieneReceta,
             tieneDerivaciones: false, // TODO: Implementar cuando exista el módulo de derivaciones
+            receta,
         };
     }
 
@@ -528,7 +622,8 @@ export class CitasService {
         const queryBuilder = this.medicoRepository
             .createQueryBuilder('medico')
             .innerJoinAndSelect('medico.persona', 'persona')
-            .leftJoinAndSelect('medico.especialidades', 'especialidad');
+            .leftJoinAndSelect('medico.especialidades', 'especialidad')
+            .where('medico.activo = :activo', { activo: true });
 
         if (especialidadId) {
             queryBuilder.andWhere('especialidad.id = :especialidadId', {
@@ -557,6 +652,10 @@ export class CitasService {
             throw new NotFoundException(
                 `Médico con ID ${medicoId} no encontrado`,
             );
+        }
+
+        if (!medico.activo) {
+            throw new BadRequestException('El médico se encuentra inactivo');
         }
 
         const horarios = await this.horarioMedicoRepository.find({
@@ -589,6 +688,7 @@ export class CitasService {
 
     /**
      * Obtiene los slots disponibles de un médico para una fecha específica
+     * Considera excepciones de horario (completas y parciales)
      * @param medicoId - ID del médico
      * @param fecha - Fecha a consultar (formato YYYY-MM-DD)
      * @returns DisponibilidadResponseDto con los slots disponibles
@@ -607,9 +707,14 @@ export class CitasService {
             );
         }
 
+        if (!medico.activo) {
+            throw new BadRequestException('El médico se encuentra inactivo');
+        }
+
         const fechaDate = new Date(fecha + 'T00:00:00');
         const diaSemana = this.getDiaSemana(fechaDate);
 
+        // Buscar excepciones para esta fecha
         const excepcion = await this.excepcionHorarioRepository.findOne({
             where: {
                 medico: { usuarioId: medicoId },
@@ -617,7 +722,8 @@ export class CitasService {
             },
         });
 
-        if (excepcion) {
+        // Si hay excepción de día completo (sin horas específicas)
+        if (excepcion && !excepcion.horaInicio && !excepcion.horaFin) {
             return {
                 fecha,
                 diaSemana,
@@ -645,11 +751,13 @@ export class CitasService {
             };
         }
 
+        // Generar slots base según el horario del médico
         const slotsBase = this.generarSlots(
             horario.horaInicio,
             horario.horaFin,
         );
 
+        // Obtener citas ya agendadas
         const citasAgendadas =
             await this.citaRepository.findCitasPendientesPorMedicoYFecha(
                 medicoId,
@@ -661,10 +769,24 @@ export class CitasService {
             return hora;
         });
 
+        // Si hay excepción parcial (con hora_inicio y hora_fin), agregar esas horas a ocupadas
+        if (excepcion?.horaInicio && excepcion?.horaFin) {
+            const slotsExcepcion = this.generarSlots(
+                excepcion.horaInicio,
+                excepcion.horaFin,
+            );
+            const horasExcepcion = slotsExcepcion.map(
+                (slot) => slot.horaInicio,
+            );
+            horasOcupadas.push(...horasExcepcion);
+        }
+
+        // Filtrar slots disponibles (excluyendo citas y excepciones)
         const slotsDisponibles = slotsBase.filter(
             (slot) => !horasOcupadas.includes(slot.horaInicio),
         );
 
+        // Si es hoy, filtrar horas pasadas
         const ahora = new Date();
         const esHoy = fecha === ahora.toISOString().split('T')[0];
 
@@ -682,6 +804,9 @@ export class CitasService {
             diaSemana,
             atiende: true,
             slots: slotsFiltrados,
+            mensaje: excepcion?.motivo
+                ? `Nota: ${excepcion.motivo} (horario reducido)`
+                : undefined,
         };
     }
 
@@ -810,5 +935,124 @@ export class CitasService {
         );
 
         return citas.map((cita) => this.mapToResponseDto(cita));
+    }
+
+    /**
+     * Finaliza una cita médica validando que el médico estuvo en la videollamada
+     * por al menos 15 minutos
+     *
+     * @param citaId - ID de la cita
+     * @param medicoId - ID del médico autenticado
+     * @returns Cita finalizada
+     */
+    async finalizarCita(
+        citaId: number,
+        medicoId: number,
+    ): Promise<CitaResponseDto> {
+        const MINUTOS_MINIMOS_REQUERIDOS = 15;
+
+        // 1. Verificar que la cita existe
+        const cita = await this.citaRepository.findById(citaId);
+
+        if (!cita) {
+            throw new NotFoundException(`Cita con ID ${citaId} no encontrada`);
+        }
+
+        // 2. Verificar que el médico sea el asignado a la cita
+        if (cita.medico.usuarioId !== medicoId) {
+            throw new ForbiddenException(
+                'Solo el médico asignado a la cita puede finalizarla',
+            );
+        }
+
+        // 3. Verificar que la cita esté en estado pendiente
+        if (cita.estado.nombre !== EstadoCita.PENDIENTE) {
+            throw new BadRequestException(
+                `Solo se pueden finalizar citas con estado "pendiente". Estado actual: ${cita.estado.nombre}`,
+            );
+        }
+
+        // 4. Verificar que existe sesión de videollamada
+        const sesion = await this.sesionRepository.findByCitaId(citaId);
+
+        if (!sesion) {
+            throw new BadRequestException(
+                `No existe sesión de videollamada para la cita ${citaId}. Debe iniciar una videollamada antes de finalizar la cita.`,
+            );
+        }
+
+        // 5. Buscar al médico como participante en la sesión
+        const participanteMedico =
+            await this.participanteRepository.findByUsuarioAndCita(
+                medicoId,
+                citaId,
+            );
+
+        if (!participanteMedico) {
+            throw new BadRequestException(
+                `El médico no participó en la videollamada de la cita ${citaId}`,
+            );
+        }
+
+        // 6. Verificar que el participante tenga rol de médico
+        const rolMedico = await this.rolSesionRepository.findOne({
+            where: { nombre: 'medico' },
+        });
+
+        if (!rolMedico || participanteMedico.rol.id !== rolMedico.id) {
+            throw new BadRequestException(
+                'El participante encontrado no tiene rol de médico',
+            );
+        }
+
+        // 7. Calcular tiempo de participación
+        const fechaUnion = participanteMedico.fechaHoraUnion;
+        const fechaSalida = participanteMedico.fechaHoraSalida;
+        const estaActivo = fechaSalida === null;
+
+        let minutosParticipacion = 0;
+
+        if (estaActivo) {
+            // Si sigue activo, calcular hasta ahora
+            const ahora = new Date();
+            minutosParticipacion =
+                (ahora.getTime() - fechaUnion.getTime()) / (1000 * 60);
+        } else if (fechaSalida) {
+            // Si ya salió, calcular duración exacta
+            minutosParticipacion =
+                (fechaSalida.getTime() - fechaUnion.getTime()) / (1000 * 60);
+        }
+
+        // 8. Validar tiempo mínimo de 15 minutos
+        if (minutosParticipacion < MINUTOS_MINIMOS_REQUERIDOS) {
+            throw new BadRequestException(
+                `El médico debe estar en la videollamada por al menos ${MINUTOS_MINIMOS_REQUERIDOS} minutos para poder finalizar la cita. ` +
+                    `Tiempo actual: ${Math.floor(minutosParticipacion)} minutos. ` +
+                    `${estaActivo ? 'La sesión aún está activa.' : 'La sesión ya finalizó.'}`,
+            );
+        }
+
+        // 9. Buscar estado "atendida"
+        const estadoAtendida = await this.estadoCitaRepository.findOne({
+            where: { nombre: EstadoCita.ATENDIDA },
+        });
+
+        if (!estadoAtendida) {
+            throw new Error(
+                'Estado "atendida" no encontrado en la base de datos',
+            );
+        }
+
+        // 10. Actualizar estado de la cita
+        const citaActualizada = await this.citaRepository.update(citaId, {
+            estado: estadoAtendida,
+        });
+
+        this.logger.log(
+            `Cita ${citaId} finalizada por médico ${medicoId}. ` +
+                `Tiempo de videollamada: ${Math.floor(minutosParticipacion)} minutos`,
+        );
+
+        return this.mapToResponseDto(citaActualizada!);
     }
 }

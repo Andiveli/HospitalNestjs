@@ -36,10 +36,14 @@ export class RegistroAtencionEntity {
     @JoinColumn({ name: 'cita_id' })
     cita!: CitaEntity;
 
-    @ManyToOne(() => HistoriaClinicaEntity, {
-        nullable: false,
-        onDelete: 'CASCADE',
-    })
+    @ManyToOne(
+        () => HistoriaClinicaEntity,
+        (historia) => historia.registrosAtencion,
+        {
+            nullable: false,
+            onDelete: 'CASCADE',
+        },
+    )
     @JoinColumn({ name: 'historia_id' })
     historiaClinica!: HistoriaClinicaEntity;
 

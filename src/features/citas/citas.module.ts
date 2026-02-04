@@ -9,6 +9,13 @@ import { PacientesEntity } from '../pacientes/pacientes.entity';
 import { RecetasModule } from '../recetas/recetas.module';
 import { RecetaMedicaEntity } from '../recetas/entities/receta-medica.entity';
 import { RecetaMedicamentoEntity } from '../recetas/entities/receta-medicamento.entity';
+import {
+    SesionConsultaRepository,
+    ParticipanteSesionRepository,
+} from '../videollamadas/repositories';
+import { SesionConsultaEntity } from '../videollamadas/entities/sesion-consulta.entity';
+import { ParticipanteSesionEntity } from '../videollamadas/entities/participante-sesion.entity';
+import { RolSesionEntity } from '../videollamadas/entities/rol-sesion.entity';
 import { CitasService } from './citas.service';
 import {
     CitasController,
@@ -41,6 +48,9 @@ import { RegistroAtencionService } from './services/registro-atencion.service';
             ExcepcionHorarioEntity,
             RecetaMedicaEntity,
             RecetaMedicamentoEntity,
+            SesionConsultaEntity,
+            ParticipanteSesionEntity,
+            RolSesionEntity,
         ]),
         RecetasModule,
     ],
@@ -57,6 +67,8 @@ import { RegistroAtencionService } from './services/registro-atencion.service';
         CitaActualizacionJob,
         CitasCacheService,
         RegistroAtencionService,
+        SesionConsultaRepository,
+        ParticipanteSesionRepository,
     ],
     exports: [CitasService, CitaRepository],
 })

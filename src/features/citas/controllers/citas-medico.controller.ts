@@ -4,6 +4,7 @@ import {
     Get,
     Param,
     ParseIntPipe,
+    Post,
     Query,
     Request,
     UseGuards,
@@ -33,6 +34,7 @@ import {
     UnauthorizedErrorResponseDto,
 } from '../dto/api-error-responses.dto';
 import {
+    CitaApiResponseDto,
     CitaDetalladaApiResponseDto,
     CitasListApiResponseDto,
     CitasPaginadasApiResponseDto,
@@ -202,14 +204,12 @@ export class CitasMedicoController {
     }
 
     @Get(':id')
-    @UseInterceptors(UserScopedCacheInterceptor)
-    @CacheTTL(600000)
+    @Roles(Rol.Medico)
     @ApiOperation({
         summary: 'Obtener detalle de una cita específica (médico)',
         description:
             'Devuelve toda la información de una cita específica asignada al médico autenticado. ' +
-            'Incluye diagnóstico, observaciones, recetas y derivaciones si la cita ya fue atendida. ' +
-            'Solo lectura - el médico no puede modificar la cita desde este endpoint.',
+            'Incluye diagnóstico, observaciones, recetas y derivaciones si la cita ya fue atendida.',
     })
     @ApiOkResponse({
         description: 'Cita obtenida exitosamente',
@@ -240,6 +240,49 @@ export class CitasMedicoController {
 
         return {
             message: 'Cita obtenida exitosamente',
+            data: cita,
+        };
+    }
+
+    @Post(':id/finalizar')
+    @Roles(Rol.Medico)
+    @ApiOperation({
+        summary: 'Finalizar cita médica',
+        description:
+            'Finaliza una cita cambiando su estado a "atendida". ' +
+            'Requiere que el médico haya participado en la videollamada por al menos 15 minutos. ' +
+            'Solo el médico asignado a la cita puede finalizarla.',
+    })
+    @ApiOkResponse({
+        description: 'Cita finalizada exitosamente',
+        type: CitaApiResponseDto,
+    })
+    @ApiBadRequestResponse({
+        description:
+            'Cita no está pendiente, no existe sesión de videollamada, médico no participó, o no cumple el tiempo mínimo de 15 minutos',
+        type: BadRequestErrorResponseDto,
+    })
+    @ApiNotFoundResponse({
+        description: 'Cita no encontrada',
+        type: NotFoundErrorResponseDto,
+    })
+    @ApiForbiddenResponse({
+        description: 'Solo el médico asignado puede finalizar la cita',
+        type: ForbiddenErrorResponseDto,
+    })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - Token JWT inválido o ausente',
+        type: UnauthorizedErrorResponseDto,
+    })
+    async finalizarCita(
+        @Param('id', ParseIntPipe) id: number,
+        @Request() req: UserRequest,
+    ): Promise<CitaApiResponseDto> {
+        const medicoId = req.user.id;
+        const cita = await this.citasService.finalizarCita(id, medicoId);
+
+        return {
+            message: 'Cita finalizada exitosamente',
             data: cita,
         };
     }

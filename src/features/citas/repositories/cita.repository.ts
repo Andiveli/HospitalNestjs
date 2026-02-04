@@ -57,7 +57,7 @@ export class CitaRepository {
     }
 
     /**
-     * Busca una cita por ID con TODAS sus relaciones (incluyendo registro de atención)
+     * Busca una cita por ID con TODAS sus relaciones (incluyendo registro de atención y receta)
      * @param id - ID de la cita
      * @returns La cita encontrada o null
      */
@@ -73,6 +73,12 @@ export class CitaRepository {
                 'medico.especialidades',
                 'registroAtencion',
                 'registroAtencion.historiaClinica',
+                'registroAtencion.recetaMedica',
+                'registroAtencion.recetaMedica.medicamentos',
+                'registroAtencion.recetaMedica.medicamentos.medicamento',
+                'registroAtencion.recetaMedica.medicamentos.medicamento.presentacion',
+                'registroAtencion.recetaMedica.medicamentos.viaAdministracion',
+                'registroAtencion.recetaMedica.medicamentos.unidadMedida',
             ],
         });
     }
