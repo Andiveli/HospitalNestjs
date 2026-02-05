@@ -12,15 +12,30 @@ export class EmailService implements OnModuleInit {
     constructor(private readonly configService: ConfigService) {}
 
     onModuleInit() {
+        const host = this.configService.get<string>('EMAIL_HOST');
+        const port = this.configService.get<number>('EMAIL_PORT');
+        const user = this.configService.get<string>('EMAIL_USER');
+        const pass = this.configService.get<string>('EMAIL_PASS');
+
+        // Validar que las credenciales estén configuradas
+        if (!host || !port || !user || !pass) {
+            console.error(
+                '❌ EmailService: Faltan configurar las variables de entorno EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS',
+            );
+            return;
+        }
+
         this.transporter = createTransport({
-            host: this.configService.get<string>('EMAIL_HOST'),
-            port: this.configService.get<number>('EMAIL_PORT'),
-            secure: false,
+            host,
+            port,
+            secure: port === 465, // SSL para puerto 465, TLS para otros
             auth: {
-                user: this.configService.get<string>('EMAIL_USER'),
-                pass: this.configService.get<string>('EMAIL_PASS'),
+                user,
+                pass,
             },
         });
+
+        console.log('✅ EmailService inicializado correctamente');
     }
 
     async enviarEmail(to: string, nombre: string, token: string) {
@@ -65,7 +80,9 @@ export class EmailService implements OnModuleInit {
 
     renderTemplate(nombre: string, url: string, archivo: string): string {
         if (!this.templates[archivo]) {
-            const filePath = join(__dirname, '..', 'email/templates', archivo);
+            // Corrección: La ruta correcta es 'templates' dentro de la misma carpeta
+            const filePath = join(__dirname, 'templates', archivo);
+            console.log(`📧 Cargando template desde: ${filePath}`);
             const rawHtml = readFileSync(filePath, 'utf8');
             this.templates[archivo] = compile(rawHtml);
         }

@@ -74,7 +74,6 @@ export class EstiloVidaController {
     }
 
     @Get()
-    @Roles(Rol.Admin)
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
         summary: 'Listar estilos de vida',

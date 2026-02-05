@@ -10,7 +10,6 @@ import {
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
-import { UserScopedCacheInterceptor } from 'src/common/interceptors/user-scoped-cache.interceptor';
 import {
     ApiBadRequestResponse,
     ApiBearerAuth,
@@ -22,11 +21,11 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { UserScopedCacheInterceptor } from 'src/common/interceptors/user-scoped-cache.interceptor';
 import UserRequest from 'src/features/people/people.request';
 import { Roles } from 'src/features/roles/roles.decorator';
 import { Rol } from 'src/features/roles/roles.enum';
 import { RolesGuard } from 'src/features/roles/roles.guard';
-import { CitasService } from '../citas.service';
 import {
     BadRequestErrorResponseDto,
     ForbiddenErrorResponseDto,
@@ -42,6 +41,7 @@ import {
 import { CitaResponseDto } from '../dto/cita-response.dto';
 import { FiltrarCitasPorFechaDto } from '../dto/filtrar-citas-por-fecha.dto';
 import { PaginationDto } from '../dto/pagination.dto';
+import { CitasService } from '../services';
 
 @ApiTags('Citas - Medico')
 @ApiBearerAuth()

@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EstadoUsuarioEntity } from '../estado-vida/estado-vida.entity';
 import { GeneroEntity } from '../generos/generos.entity';
 import { PeopleEntity } from '../people/people.entity';
+import { PacientesEntity } from '../pacientes/pacientes.entity';
 import { PerfilesModule } from '../perfiles/perfiles.module';
 import { RolesEntity } from '../roles/roles.entity';
 import { RolesGuard } from '../roles/roles.guard';
@@ -30,6 +31,7 @@ import { EmailModule } from 'src/core/messaging/email/email.module';
         TypeOrmModule.forFeature([GeneroEntity]),
         TypeOrmModule.forFeature([EstadoUsuarioEntity]),
         TypeOrmModule.forFeature([RolesEntity]),
+        TypeOrmModule.forFeature([PacientesEntity]),
         JwtModule.registerAsync({
             inject: [ConfigService],
             useFactory: async (configService: ConfigService) => ({

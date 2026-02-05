@@ -17,6 +17,7 @@ import { Repository } from 'typeorm';
 import { EstadoUsuarioEntity } from '../estado-vida/estado-vida.entity';
 import { GeneroEntity } from '../generos/generos.entity';
 import { PeopleEntity } from '../people/people.entity';
+import { PacientesEntity } from '../pacientes/pacientes.entity';
 import { PerfilContext } from '../perfiles/perfil.context';
 import { RolesEntity } from '../roles/roles.entity';
 import { AuthInterface } from './auth.interface';
@@ -35,6 +36,8 @@ export class AuthService {
         private genero: Repository<GeneroEntity>,
         @InjectRepository(RolesEntity)
         private rolesRepository: Repository<RolesEntity>,
+        @InjectRepository(PacientesEntity)
+        private pacientesRepository: Repository<PacientesEntity>,
         private perfilContext: PerfilContext,
     ) {}
 
@@ -119,6 +122,20 @@ export class AuthService {
         nuevoUsuario.roles = [rolPaciente];
 
         const user = await this.authRepository.save(nuevoUsuario);
+
+        // Crear registro vacío en pacientes para que pueda completar su perfil después
+        const paciente = this.pacientesRepository.create({
+            usuarioId: user.id,
+            person: user,
+            fechaNacimiento: new Date(),
+            lugarResidencia: null,
+            numeroCelular: null,
+            pais: null,
+            grupoSanguineo: null,
+            estiloVida: null,
+        });
+        await this.pacientesRepository.save(paciente);
+
         await this.emailQueue.add('sendEmail', {
             email: nuevoUsuario.email,
             nombre: nuevoUsuario.primerNombre,

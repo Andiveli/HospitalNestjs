@@ -9,6 +9,10 @@ import { MedicamentosRepository } from './repositories/medicamentos.repository';
 import { CreateMedicamentoDto } from './dto/create-medicamento.dto';
 import { UpdateMedicamentoDto } from './dto/update-medicamento.dto';
 import {
+    CreatePresentacionDto,
+    UpdatePresentacionDto,
+} from './dto/presentacion.dto';
+import {
     MedicamentoResponseDto,
     PresentacionResponseDto,
 } from './dto/medicamento-response.dto';
@@ -216,5 +220,133 @@ export class MedicamentosService {
                 nombre: medicamento.presentacion.nombre,
             },
         };
+    }
+
+    // ==================== CRUD PRESENTACIONES ====================
+
+    /**
+     * Crea una nueva presentación de medicamento
+     * @param dto - Datos de la presentación a crear
+     * @returns La presentación creada
+     */
+    async createPresentacion(
+        dto: CreatePresentacionDto,
+    ): Promise<PresentacionResponseDto> {
+        // Verificar que no exista una presentación con el mismo nombre
+        const existe =
+            await this.medicamentosRepository.existsPresentacionByNombre(
+                dto.nombre,
+            );
+
+        if (existe) {
+            throw new ConflictException(
+                `Ya existe una presentación con el nombre "${dto.nombre}"`,
+            );
+        }
+
+        const presentacion =
+            await this.medicamentosRepository.createPresentacion(dto.nombre);
+
+        this.logger.log(
+            `Presentación creada: ${presentacion.nombre} (ID: ${presentacion.id})`,
+        );
+
+        return {
+            id: presentacion.id,
+            nombre: presentacion.nombre,
+        };
+    }
+
+    /**
+     * Obtiene una presentación por ID
+     * @param id - ID de la presentación
+     * @returns La presentación encontrada
+     */
+    async findPresentacionById(id: number): Promise<PresentacionResponseDto> {
+        const presentacion =
+            await this.medicamentosRepository.findPresentacionById(id);
+
+        if (!presentacion)
+            throw new NotFoundException(
+                `Presentación con ID ${id} no encontrada`,
+            );
+
+        return {
+            id: presentacion.id,
+            nombre: presentacion.nombre,
+        };
+    }
+
+    /**
+     * Actualiza una presentación existente
+     * @param id - ID de la presentación
+     * @param dto - Datos a actualizar
+     * @returns La presentación actualizada
+     */
+    async updatePresentacion(
+        id: number,
+        dto: UpdatePresentacionDto,
+    ): Promise<PresentacionResponseDto> {
+        // Verificar que la presentación exista
+        const presentacionActual =
+            await this.medicamentosRepository.findPresentacionById(id);
+
+        if (!presentacionActual) {
+            throw new NotFoundException(
+                `Presentación con ID ${id} no encontrada`,
+            );
+        }
+
+        // Si se cambia el nombre, verificar que no exista otro con ese nombre
+        if (dto.nombre) {
+            const existe =
+                await this.medicamentosRepository.existsPresentacionByNombre(
+                    dto.nombre,
+                    id,
+                );
+
+            if (existe) {
+                throw new ConflictException(
+                    `Ya existe otra presentación con el nombre "${dto.nombre}"`,
+                );
+            }
+        }
+
+        const nombreFinal = dto.nombre ?? presentacionActual.nombre;
+        const actualizada =
+            await this.medicamentosRepository.updatePresentacion(
+                id,
+                nombreFinal,
+            );
+
+        this.logger.log(`Presentación actualizada: ID ${id}`);
+
+        return {
+            id: actualizada.id,
+            nombre: actualizada.nombre,
+        };
+    }
+
+    /**
+     * Elimina una presentación
+     * @param id - ID de la presentación a eliminar
+     */
+    async deletePresentacion(id: number): Promise<void> {
+        // Verificar que la presentación exista
+        const presentacion =
+            await this.medicamentosRepository.findPresentacionById(id);
+
+        if (!presentacion) {
+            throw new NotFoundException(
+                `Presentación con ID ${id} no encontrada`,
+            );
+        }
+
+        // TODO: Verificar que no haya medicamentos usando esta presentación
+        // antes de eliminar (integrity constraint)
+
+        await this.medicamentosRepository.deletePresentacion(id);
+
+        this.logger.log(`Presentación eliminada: ID ${id}`);
     }
 }

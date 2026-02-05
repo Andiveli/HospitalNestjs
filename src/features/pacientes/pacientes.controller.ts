@@ -5,6 +5,7 @@ import {
     HttpCode,
     HttpStatus,
     Post,
+    Put,
     Request,
 } from '@nestjs/common';
 import {
@@ -16,16 +17,17 @@ import {
     ApiNotFoundResponse,
     ApiOkResponse,
     ApiOperation,
-    ApiUnauthorizedResponse,
     ApiTags,
+    ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import UserRequest from '../people/people.request';
 import { Roles } from '../roles/roles.decorator';
 import { Rol } from '../roles/roles.enum';
-import { DocsDto } from './dto/doc.dto';
-import { InfoDto } from './dto/info.dto';
-import { PacientesEntity } from './pacientes.entity';
+import UserRequest from '../people/people.request';
 import { PacientesService } from './pacientes.service';
+import { InfoDto } from './dto/info.dto';
+import { UpdateInfoDto } from './dto/update-info.dto';
+import { PacientesEntity } from './pacientes.entity';
+import { DocsDto } from './dto/doc.dto';
 
 /**
  * Controller para gestionar información de pacientes
@@ -175,6 +177,91 @@ export class PacientesController {
             req.user.email,
         );
         return { msg: 'Información agregada correctamente', data: result };
+    }
+
+    /**
+     * Actualiza la información del paciente autenticado
+     *
+     * Permite actualizar cualquiera de los campos de información del paciente.
+     * Todos los campos son opcionales, solo se actualizan los que se envíen.
+     *
+     * @param req - Request con usuario autenticado
+     * @param body - Datos a actualizar (todos opcionales)
+     * @returns Paciente actualizado
+     */
+    @Roles(Rol.Paciente)
+    @Put('updateInfo')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Actualizar información del paciente',
+        description: `
+        Actualiza la información del paciente autenticado.
+        
+        **Campos actualizables (todos opcionales):**
+        - fecha: Fecha de nacimiento (YYYY-MM-DD)
+        - telefono: Número de teléfono
+        - residencia: Dirección de residencia
+        - pais: Nombre del país
+        - sangre: Grupo sanguíneo
+        - estiloVida: Estilo de vida
+        
+        **Casos de uso:**
+        - Cambiar grupo sanguíneo
+        - Actualizar teléfono o dirección
+        - Modificar país de residencia
+        `,
+    })
+    @ApiBody({
+        type: UpdateInfoDto,
+        description: 'Datos del paciente a actualizar (todos opcionales)',
+        examples: {
+            ejemplo1: {
+                summary: 'Ejemplo de actualización parcial',
+                value: {
+                    telefono: '+5491166661234',
+                    residencia: 'Nueva dirección 456',
+                },
+            },
+        },
+    })
+    @ApiOkResponse({
+        description: 'Información del paciente actualizada exitosamente',
+        schema: {
+            type: 'object',
+            properties: {
+                msg: {
+                    type: 'string',
+                    example: 'Información actualizada correctamente',
+                },
+                data: {
+                    type: 'object',
+                    description: 'Datos del paciente actualizados',
+                },
+            },
+        },
+    })
+    @ApiBadRequestResponse({
+        description: 'Datos inválidos',
+    })
+    @ApiNotFoundResponse({
+        description: 'Perfil de paciente o datos relacionados no encontrados',
+    })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - token JWT inválido o ausente',
+    })
+    @ApiForbiddenResponse({
+        description:
+            'Acceso denegado - solo pacientes pueden usar este endpoint',
+    })
+    async updateInfo(
+        @Request() req: UserRequest,
+        @Body() body: UpdateInfoDto,
+    ): Promise<{ msg: string; data: PacientesEntity }> {
+        const result = await this.pacientesService.updateInfo(
+            body,
+            req.user.email,
+        );
+        return { msg: 'Información actualizada correctamente', data: result };
     }
 
     /**

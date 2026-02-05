@@ -454,4 +454,34 @@ export class CitaRepository {
             take: limit,
         });
     }
+
+    /**
+     * Obtiene todas las citas del sistema con paginación (para admin)
+     * Sin filtros de estado - devuelve pendientes, atendidas y canceladas
+     * @param page - Número de página
+     * @param limit - Registros por página
+     * @returns Tupla [citas, total]
+     */
+    async findAllCitasAdminPaginadas(
+        page: number,
+        limit: number,
+    ): Promise<[CitaEntity[], number]> {
+        const skip = (page - 1) * limit;
+
+        return this.ormRepository.findAndCount({
+            relations: [
+                'estado',
+                'medico',
+                'medico.persona',
+                'medico.especialidades',
+                'paciente',
+                'paciente.person',
+            ],
+            order: {
+                fechaHoraInicio: 'DESC',
+            },
+            skip,
+            take: limit,
+        });
+    }
 }

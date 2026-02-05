@@ -5,10 +5,13 @@ import {
     Param,
     ParseIntPipe,
     Query,
+    UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
 import {
     ApiBadRequestResponse,
+    ApiBearerAuth,
+    ApiForbiddenResponse,
     ApiNotFoundResponse,
     ApiOkResponse,
     ApiOperation,
@@ -16,18 +19,24 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CitasService } from '../citas.service';
+import { Roles } from '../../roles/roles.decorator';
+import { Rol } from '../../roles/roles.enum';
+import { RolesGuard } from '../../roles/roles.guard';
 import {
     BadRequestErrorResponseDto,
+    ForbiddenErrorResponseDto,
     NotFoundErrorResponseDto,
     UnauthorizedErrorResponseDto,
 } from '../dto/api-error-responses.dto';
 import {
+    CitasPaginadasApiResponseDto,
     DiasAtencionApiResponseDto,
     DisponibilidadApiResponseDto,
     MedicosDisponiblesApiResponseDto,
 } from '../dto/api-responses.dto';
 import { ConsultarDisponibilidadQueryDto } from '../dto/disponibilidad.dto';
+import { PaginationDto } from '../dto/pagination.dto';
+import { CitasService } from '../services';
 
 @ApiTags('Citas - General')
 @Controller('citas')
@@ -139,6 +148,43 @@ export class CitasController {
         return {
             message: 'Días de atención obtenidos exitosamente',
             data: diasAtencion,
+        };
+    }
+
+    @Get('admin/citas')
+    @ApiBearerAuth()
+    @UseGuards(RolesGuard)
+    @Roles(Rol.Admin)
+    @ApiOperation({
+        summary: 'Listar todas las citas del sistema',
+        description:
+            'Obtiene la lista completa de todas las citas médicas del sistema. ' +
+            'Incluye citas en todos los estados: pendiente, atendida y cancelada. ' +
+            'Solo accesible por administradores.',
+    })
+    @ApiOkResponse({
+        description: 'Lista de citas obtenida exitosamente',
+        type: CitasPaginadasApiResponseDto,
+    })
+    @ApiUnauthorizedResponse({
+        description: 'No autorizado - Token JWT inválido o ausente',
+        type: UnauthorizedErrorResponseDto,
+    })
+    @ApiForbiddenResponse({
+        description: 'Prohibido - Se requiere rol de administrador',
+        type: ForbiddenErrorResponseDto,
+    })
+    async getAllCitasAdmin(
+        @Query() pagination: PaginationDto,
+    ): Promise<CitasPaginadasApiResponseDto> {
+        const { page = 1, limit = 10 } = pagination;
+
+        const result = await this.citasService.getAllCitasAdmin(page, limit);
+
+        return {
+            message: 'Citas obtenidas exitosamente',
+            data: result.data,
+            meta: result.meta,
         };
     }
 }

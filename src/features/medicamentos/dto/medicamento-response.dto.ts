@@ -102,3 +102,20 @@ export class PresentacionesListApiResponseDto {
     })
     data!: PresentacionResponseDto[];
 }
+
+/**
+ * DTO de respuesta API para crear/actualizar presentación
+ */
+export class PresentacionApiResponseDto {
+    @ApiProperty({
+        description: 'Mensaje de éxito',
+        example: 'Presentación creada exitosamente',
+    })
+    message!: string;
+
+    @ApiProperty({
+        description: 'Datos de la presentación',
+        type: PresentacionResponseDto,
+    })
+    data!: PresentacionResponseDto;
+}

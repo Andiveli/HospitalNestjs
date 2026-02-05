@@ -99,8 +99,8 @@ export class HistoriaClinicaService {
             edad: this.calcularEdad(paciente.fechaNacimiento),
             genero: person.genero?.nombre ?? 'No especificado',
             pais: paciente.pais?.nombre ?? 'No especificado',
-            lugarResidencia: paciente.lugarResidencia,
-            numeroCelular: paciente.numeroCelular,
+            lugarResidencia: paciente.lugarResidencia ?? undefined,
+            numeroCelular: paciente.numeroCelular ?? undefined,
             grupoSanguineo:
                 paciente.grupoSanguineo?.nombre ?? 'No especificado',
             estiloVida: paciente.estiloVida?.nombre ?? 'No especificado',

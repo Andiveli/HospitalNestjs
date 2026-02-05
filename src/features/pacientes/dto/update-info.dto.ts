@@ -1,69 +1,61 @@
 import {
     IsDateString,
-    IsNotEmpty,
+    IsOptional,
     IsString,
     Matches,
     IsEnum,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Sangre } from './info.dto';
 
-export enum Sangre {
-    A_POSITIVE = 'A+',
-    A_NEGATIVE = 'A-',
-    B_POSITIVE = 'B+',
-    B_NEGATIVE = 'B-',
-    AB_POSITIVE = 'AB+',
-    AB_NEGATIVE = 'AB-',
-    O_POSITIVE = 'O+',
-    O_NEGATIVE = 'O-',
-}
-
-export class InfoDto {
-    @ApiProperty({
-        description: 'Fecha de nacimiento del paciente',
+/**
+ * DTO para actualizar información del paciente (campos opcionales)
+ */
+export class UpdateInfoDto {
+    @ApiPropertyOptional({
+        description: 'Fecha de nacimiento del paciente (YYYY-MM-DD)',
         example: '1990-05-15',
         format: 'date',
-        pattern: 'YYYY-MM-DD',
     })
+    @IsOptional()
     @IsDateString({}, { message: 'Formato de fecha incorrecto (YYYY-MM-DD)' })
-    @IsNotEmpty({ message: 'Tienes que agregar tu fecha de nacimiento' })
-    fecha!: string;
+    fecha?: string;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'Número de teléfono del paciente',
         example: '+5491155551234',
         pattern: '^[+]?[0-9]{10}$',
         minLength: 10,
         maxLength: 15,
     })
+    @IsOptional()
     @IsString()
-    @IsNotEmpty({ message: 'Tienes que agregar tu numero de telefono' })
     @Matches(/^\+?[0-9]{10}$/, {
         message: 'El numero de telefono no es valido',
     })
-    telefono!: string;
+    telefono?: string;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'Dirección completa de residencia',
-        example: 'Av. Corrientes 1234, Buenos Aires, Argentina',
+        example: 'Av. Corrientes 1234, Buenos Aires',
         minLength: 10,
         maxLength: 255,
     })
+    @IsOptional()
     @IsString()
-    @IsNotEmpty({ message: 'Tienes que agregar tu direccion' })
-    residencia!: string;
+    residencia?: string;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'País de residencia del paciente',
         example: 'Argentina',
         minLength: 3,
         maxLength: 100,
     })
+    @IsOptional()
     @IsString()
-    @IsNotEmpty({ message: 'Tienes que agregar tu pais' })
-    pais!: string;
+    pais?: string;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'Grupo sanguíneo del paciente',
         example: 'O+',
         enum: [
@@ -77,24 +69,24 @@ export class InfoDto {
             Sangre.O_NEGATIVE,
         ],
     })
+    @IsOptional()
     @IsEnum(Sangre, {
         message:
             'Grupo sanguíneo no válido. Opciones: A+, A-, B+, B-, AB+, AB-, O+, O-',
     })
-    @IsNotEmpty({ message: 'Tienes que agregar tu grupo sanguineo' })
-    sangre!: Sangre;
+    sangre?: Sangre;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description:
             'Estilo de vida del paciente (debe existir en la tabla estilos_vida)',
         example: 'Activo',
         minLength: 1,
         maxLength: 100,
     })
+    @IsOptional()
     @IsString()
-    @IsNotEmpty({ message: 'Tienes que agregar tu estilo de vida' })
     @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, {
         message: 'El estilo de vida solo puede contener letras',
     })
-    estiloVida!: string;
+    estiloVida?: string;
 }

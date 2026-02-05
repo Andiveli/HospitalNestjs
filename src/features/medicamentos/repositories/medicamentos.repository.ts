@@ -147,4 +147,84 @@ export class MedicamentosRepository {
         });
         return count === medicamentoIds.length;
     }
+
+    // ==================== CRUD PRESENTACIONES ====================
+
+    /**
+     * Crea una nueva presentación de medicamento
+     * @param nombre - Nombre de la presentación
+     * @returns La presentación creada
+     */
+    async createPresentacion(
+        nombre: string,
+    ): Promise<PresentacionMedicamentoEntity> {
+        const presentacion = this.presentacionRepository.create({ nombre });
+        return this.presentacionRepository.save(presentacion);
+    }
+
+    /**
+     * Busca una presentación por ID
+     * @param id - ID de la presentación
+     * @returns La presentación encontrada o null
+     */
+    async findPresentacionById(
+        id: number,
+    ): Promise<PresentacionMedicamentoEntity | null> {
+        return this.presentacionRepository.findOne({ where: { id } });
+    }
+
+    /**
+     * Actualiza una presentación existente
+     * @param id - ID de la presentación
+     * @param nombre - Nuevo nombre
+     * @returns La presentación actualizada
+     */
+    async updatePresentacion(
+        id: number,
+        nombre: string,
+    ): Promise<PresentacionMedicamentoEntity> {
+        await this.presentacionRepository.update(id, { nombre });
+        const actualizada = await this.findPresentacionById(id);
+        if (!actualizada) {
+            throw new NotFoundException(
+                `Presentación con ID ${id} no encontrada`,
+            );
+        }
+        return actualizada;
+    }
+
+    /**
+     * Elimina una presentación
+     * @param id - ID de la presentación
+     */
+    async deletePresentacion(id: number): Promise<void> {
+        const resultado = await this.presentacionRepository.delete(id);
+        if (resultado.affected === 0) {
+            throw new NotFoundException(
+                `Presentación con ID ${id} no encontrada`,
+            );
+        }
+    }
+
+    /**
+     * Verifica si existe una presentación por nombre (case insensitive)
+     * @param nombre - Nombre a buscar
+     * @param excludeId - ID a excluir (para updates)
+     * @returns true si existe, false si no
+     */
+    async existsPresentacionByNombre(
+        nombre: string,
+        excludeId?: number,
+    ): Promise<boolean> {
+        const query = this.presentacionRepository
+            .createQueryBuilder('presentacion')
+            .where('LOWER(presentacion.nombre) = LOWER(:nombre)', { nombre });
+
+        if (excludeId) {
+            query.andWhere('presentacion.id != :excludeId', { excludeId });
+        }
+
+        const count = await query.getCount();
+        return count > 0;
+    }
 }

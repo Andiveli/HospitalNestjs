@@ -74,7 +74,6 @@ export class SangreController {
     }
 
     @Get()
-    @Roles(Rol.Admin)
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
         summary: 'Listar grupos sanguíneos',

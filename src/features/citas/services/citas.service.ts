@@ -7,44 +7,44 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ExcepcionHorarioEntity } from '../horario/excepcion-horario.entity';
-import { HorarioMedicoEntity } from '../horario/horario-medico.entity';
-import { MedicoEntity } from '../medicos/medicos.entity';
-import { PacientesEntity } from '../pacientes/pacientes.entity';
-import { RecetasService } from '../recetas/recetas.service';
+import { ExcepcionHorarioEntity } from 'src/features/horario/excepcion-horario.entity';
+import { HorarioMedicoEntity } from 'src/features/horario/horario-medico.entity';
+import { MedicoEntity } from 'src/features/medicos/medicos.entity';
+import { PacientesEntity } from 'src/features/pacientes/pacientes.entity';
+import { RecetasService } from 'src/features/recetas/recetas.service';
+import { RolSesionEntity } from 'src/features/videollamadas/entities';
 import {
-    SesionConsultaRepository,
     ParticipanteSesionRepository,
-} from '../videollamadas/repositories';
-import { RolSesionEntity } from '../videollamadas/entities/rol-sesion.entity';
+    SesionConsultaRepository,
+} from 'src/features/videollamadas/repositories';
+import { Repository } from 'typeorm';
 import {
     CITA_DURACION_MINUTOS,
     CITA_HORAS_MINIMAS_MODIFICACION,
     EstadoCita,
-} from './constants/estado-cita.constants';
+} from '../constants/estado-cita.constants';
 import {
     CitaDetalladaResponseDto,
-    RecetaDetalleDto,
     MedicamentoRecetaDetalleDto,
-} from './dto/cita-detallada-response.dto';
+    RecetaDetalleDto,
+} from '../dto/cita-detallada-response.dto';
 import {
     CitaResponseDto,
     MedicoInfoDto,
     PacienteInfoDto,
-} from './dto/cita-response.dto';
-import { CreateCitaDto } from './dto/create-cita.dto';
-import { DiasAtencionResponseDto } from './dto/dias-atencion.dto';
+} from '../dto/cita-response.dto';
+import { CreateCitaDto } from '../dto/create-cita.dto';
+import { DiasAtencionResponseDto } from '../dto/dias-atencion.dto';
 import {
     DisponibilidadResponseDto,
     SlotDisponibleDto,
-} from './dto/disponibilidad.dto';
-import { MedicoDisponibleDto } from './dto/medico-disponible.dto';
-import { PaginatedResponseDto } from './dto/pagination.dto';
-import { UpdateCitaDto } from './dto/update-cita.dto';
-import { CitaEntity } from './entities/cita.entity';
-import { EstadoCitaEntity } from './entities/estado-cita.entity';
-import { CitaRepository } from './repositories/cita.repository';
+} from '../dto/disponibilidad.dto';
+import { MedicoDisponibleDto } from '../dto/medico-disponible.dto';
+import { PaginatedResponseDto } from '../dto/pagination.dto';
+import { UpdateCitaDto } from '../dto/update-cita.dto';
+import { CitaEntity } from '../entities/cita.entity';
+import { EstadoCitaEntity } from '../entities/estado-cita.entity';
+import { CitaRepository } from '../repositories/cita.repository';
 
 @Injectable()
 export class CitasService {
@@ -1028,7 +1028,7 @@ export class CitasService {
             throw new BadRequestException(
                 `El médico debe estar en la videollamada por al menos ${MINUTOS_MINIMOS_REQUERIDOS} minutos para poder finalizar la cita. ` +
                     `Tiempo actual: ${Math.floor(minutosParticipacion)} minutos. ` +
-                    `${estaActivo ? 'La sesión aún está activa.' : 'La sesión ya finalizó.'}`,
+                    `${estaActivo ? 'La sesión aún está activa.' : 'La sesión ya finalizar.'}`,
             );
         }
 
@@ -1054,5 +1054,35 @@ export class CitasService {
         );
 
         return this.mapToResponseDto(citaActualizada!);
+    }
+
+    /**
+     * Obtiene todas las citas del sistema con paginación (para administradores)
+     * Devuelve citas en todos los estados: pendiente, atendida y cancelada
+     * @param page - Número de página
+     * @param limit - Registros por página
+     * @returns Respuesta paginada con todas las citas del sistema
+     */
+    async getAllCitasAdmin(
+        page: number,
+        limit: number,
+    ): Promise<PaginatedResponseDto<CitaResponseDto>> {
+        const [citas, total] =
+            await this.citaRepository.findAllCitasAdminPaginadas(page, limit);
+
+        const data =
+            citas && citas.length > 0
+                ? citas.map((cita) => this.mapToResponseDto(cita))
+                : [];
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
 }

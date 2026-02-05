@@ -13,7 +13,6 @@ import {
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
-import { UserScopedCacheInterceptor } from 'src/common/interceptors/user-scoped-cache.interceptor';
 import {
     ApiBadRequestResponse,
     ApiBearerAuth,
@@ -27,11 +26,11 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { UserScopedCacheInterceptor } from 'src/common/interceptors/user-scoped-cache.interceptor';
 import UserRequest from 'src/features/people/people.request';
 import { Roles } from 'src/features/roles/roles.decorator';
 import { Rol } from 'src/features/roles/roles.enum';
 import { RolesGuard } from 'src/features/roles/roles.guard';
-import { CitasService } from '../citas.service';
 import {
     BadRequestErrorResponseDto,
     ConflictErrorResponseDto,
@@ -49,6 +48,7 @@ import {
 import { CreateCitaDto } from '../dto/create-cita.dto';
 import { PaginationDto } from '../dto/pagination.dto';
 import { UpdateCitaDto } from '../dto/update-cita.dto';
+import { CitasService } from '../services';
 import { CitasCacheService } from '../services/citas-cache.service';
 
 @ApiTags('Citas - Paciente')

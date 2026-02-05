@@ -63,4 +63,13 @@ export class PeopleService {
         user.roles.push(roles);
         return this.peopleRepository.save(user);
     }
+
+    async countUsuariosByRol(roleName: string): Promise<number> {
+        return this.peopleRepository
+            .createQueryBuilder('user')
+            .innerJoin('user.roles', 'role')
+            .where('role.nombre = :roleName', { roleName })
+            .andWhere('user.verificado = :verificado', { verificado: true })
+            .getCount();
+    }
 }

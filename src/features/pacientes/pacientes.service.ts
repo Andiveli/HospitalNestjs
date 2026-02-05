@@ -8,6 +8,7 @@ import { PaisEntity } from '../paises/paises.entity';
 import { PeopleEntity } from '../people/people.entity';
 import { GrupoSanguineoEntity } from '../sangre/sangre.entity';
 import { InfoDto } from './dto/info.dto';
+import { UpdateInfoDto } from './dto/update-info.dto';
 import { PerfilPaciente } from './dto/perfil.dto';
 import { PacientesEntity } from './pacientes.entity';
 
@@ -37,21 +38,113 @@ export class PacientesService {
             where: { nombre: estiloVida },
         });
         if (!vidaUser)
-            throw new NotFoundException('Estilo de vida no permitido');
+            throw new NotFoundException(
+                `Estilo de vida "${estiloVida}" no encontrado. Available options: Activo, Sedentario, etc.`,
+            );
         const sangreUser = await this.sangre.findOne({
             where: { nombre: sangre },
         });
         if (!sangreUser)
             throw new NotFoundException('Grupo sanguineo no encontrado');
-        const paciente = this.pacientesRepository.create({
-            usuarioId: user.id,
-            fechaNacimiento: fecha,
-            pais: paisUser,
-            lugarResidencia: residencia,
-            numeroCelular: telefono,
-            grupoSanguineo: sangreUser,
-            estiloVida: vidaUser,
+
+        // Verificar si ya existe un paciente
+        let paciente = await this.pacientesRepository.findOne({
+            where: { usuarioId: user.id },
         });
+
+        if (paciente) {
+            // Actualizar existente
+            paciente.fechaNacimiento = new Date(fecha);
+            paciente.lugarResidencia = residencia;
+            paciente.numeroCelular = telefono;
+            paciente.pais = paisUser;
+            paciente.grupoSanguineo = sangreUser;
+            paciente.estiloVida = vidaUser;
+        } else {
+            // Crear nuevo
+            paciente = this.pacientesRepository.create({
+                usuarioId: user.id,
+                person: user,
+                fechaNacimiento: new Date(fecha),
+                pais: paisUser,
+                lugarResidencia: residencia,
+                numeroCelular: telefono,
+                grupoSanguineo: sangreUser,
+                estiloVida: vidaUser,
+            });
+        }
+
+        return await this.pacientesRepository.save(paciente);
+    }
+
+    /**
+     * Actualiza la información del paciente autenticado
+     * @param info - Datos a actualizar (todos opcionales)
+     * @param email - Email del usuario autenticado
+     * @returns Paciente actualizado
+     */
+    async updateInfo(
+        info: UpdateInfoDto,
+        email: string,
+    ): Promise<PacientesEntity> {
+        const user = await this.peopleRepository.findOne({ where: { email } });
+        if (!user) throw new NotFoundException('Usuario no encontrado');
+
+        const paciente = await this.pacientesRepository.findOne({
+            where: { usuarioId: user.id },
+            relations: ['pais', 'grupoSanguineo', 'estiloVida'],
+        });
+
+        if (!paciente) {
+            throw new NotFoundException(
+                'Perfil de paciente no encontrado. Primero registra tu información con POST /pacientes/addInfo',
+            );
+        }
+
+        // Actualizar campos opcionales
+        if (info.fecha) {
+            paciente.fechaNacimiento = new Date(info.fecha);
+        }
+
+        if (info.telefono) {
+            paciente.numeroCelular = info.telefono;
+        }
+
+        if (info.residencia) {
+            paciente.lugarResidencia = info.residencia;
+        }
+
+        if (info.pais) {
+            const paisUser = await this.paises.findOne({
+                where: { nombre: info.pais },
+            });
+            if (!paisUser)
+                throw new NotFoundException(
+                    `País "${info.pais}" no encontrado`,
+                );
+            paciente.pais = paisUser;
+        }
+
+        if (info.sangre) {
+            const sangreUser = await this.sangre.findOne({
+                where: { nombre: info.sangre },
+            });
+            if (!sangreUser)
+                throw new NotFoundException('Grupo sanguíneo no encontrado');
+            paciente.grupoSanguineo = sangreUser;
+        }
+
+        if (info.estiloVida) {
+            const vidaUser = await this.vida.findOne({
+                where: { nombre: info.estiloVida },
+            });
+            if (!vidaUser)
+                throw new NotFoundException(
+                    `Estilo de vida "${info.estiloVida}" no encontrado. Available options: Activo, Sedentario, etc.`,
+                );
+            paciente.estiloVida = vidaUser;
+        }
+
         return await this.pacientesRepository.save(paciente);
     }
 
@@ -90,12 +183,12 @@ export class PacientesService {
             nombres: `${person.primerNombre} ${person.segundoNombre || ''} ${person.primerApellido} ${person.segundoApellido || ''}`,
             edad: this.commonService.calcularEdad(paciente.fechaNacimiento),
             email: person.email,
-            telefono: paciente.numeroCelular,
-            pais: pais.nombre,
-            genero: person.genero.nombre,
-            residencia: paciente.lugarResidencia,
-            sangre: grupoSanguineo.nombre,
-            estilo: estiloVida.nombre,
+            telefono: paciente.numeroCelular || '',
+            pais: pais?.nombre || '',
+            genero: person.genero?.nombre || '',
+            residencia: paciente.lugarResidencia || '',
+            sangre: grupoSanguineo?.nombre || '',
+            estilo: estiloVida?.nombre || '',
             imagen: person.imageUrl,
             cedula: person.cedula,
             enfermedades,

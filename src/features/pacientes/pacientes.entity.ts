@@ -25,27 +25,27 @@ export class PacientesEntity {
     @Column('date', { name: 'fecha_nacimiento' })
     fechaNacimiento!: Date;
 
-    @ManyToOne(() => PaisEntity, { nullable: false })
+    @ManyToOne(() => PaisEntity, { nullable: true })
     @JoinColumn({ name: 'pais_id' })
-    pais!: PaisEntity;
+    pais!: PaisEntity | null;
 
     @Column('varchar', {
         length: 150,
         nullable: true,
         name: 'lugar_residencia',
     })
-    lugarResidencia!: string;
+    lugarResidencia!: string | null;
 
     @Column('char', { length: 10, nullable: true, name: 'numero_celular' })
-    numeroCelular!: string;
+    numeroCelular!: string | null;
 
-    @ManyToOne(() => GrupoSanguineoEntity, { nullable: false })
+    @ManyToOne(() => GrupoSanguineoEntity, { nullable: true })
     @JoinColumn({ name: 'grupo_sanguineo_id' })
-    grupoSanguineo!: GrupoSanguineoEntity;
+    grupoSanguineo!: GrupoSanguineoEntity | null;
 
-    @ManyToOne(() => EstiloVidaEntity, { nullable: false })
+    @ManyToOne(() => EstiloVidaEntity, { nullable: true })
     @JoinColumn({ name: 'estilo_vida_id' })
-    estiloVida!: EstiloVidaEntity;
+    estiloVida!: EstiloVidaEntity | null;
 
     @OneToMany(
         () => PacienteEnfermedadEntity,
